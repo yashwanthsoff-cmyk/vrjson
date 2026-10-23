@@ -80,6 +80,7 @@ export interface ObservationRow {
 export interface ActivityRow extends ActivityEvent {
   displayName: string
   pseudonym: string
+  mappedEntitlementId?: string | null
   mappedEntitlementName: string | null
   matchedRuleId: string | null
 }
@@ -87,6 +88,8 @@ export interface ActivityRow extends ActivityEvent {
 export interface MappingRuleView extends EventMappingRule {
   source: 'seed' | 'session'
   edited: boolean
+  specificity?: number
+  matchCount?: number
 }
 
 export interface MappingTestResult {

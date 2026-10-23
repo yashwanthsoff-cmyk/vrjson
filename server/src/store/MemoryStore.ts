@@ -236,7 +236,6 @@ export class MemoryStore implements DataStore {
       { id: 'rule-gh-4', app: 'github', actionPattern: 'release.artifact.export', entitlementId: 'e-repo-export', note: 'Maps release artifact export events' },
       { id: 'rule-me-1', app: 'microsoft_entra', actionPattern: 'directory.role.*', entitlementId: 'e-entra-admin', note: 'Maps directory role assignment' },
       { id: 'rule-me-2', app: 'microsoft_entra', actionPattern: 'directory.user.*', entitlementId: 'e-entra-admin', note: 'Maps directory user read' },
-      { id: 'rule-me-3', app: 'microsoft_entra', actionPattern: 'billing.view', entitlementId: 'e-entra-app', note: 'Maps billing app read' },
     ]
 
     // Initialize F-03 Seed Ingest Runs

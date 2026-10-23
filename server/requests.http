@@ -337,3 +337,187 @@ x-session-id: {{sessionId}}
 Content-Type: application/json
 
 {}
+
+
+#####################################
+# F-03 Granted-vs-Used Detector Requests
+#####################################
+
+### F03: Get Activity Events
+GET {{baseUrl}}/activity?limit=20
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Activity Summary
+GET {{baseUrl}}/activity/summary
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: List Mapping Rules
+GET {{baseUrl}}/mapping-rules
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Test Mapping Glob Pattern
+POST {{baseUrl}}/mapping/test
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "action": "drive.file.create",
+  "app": "google_workspace"
+}
+
+### F03: Create Mapping Rule (Session Overlay)
+POST {{baseUrl}}/mapping-rules
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "app": "google_workspace",
+  "actionPattern": "drive.export.*",
+  "entitlementId": "e-drive-admin",
+  "note": "Custom export rule in session"
+}
+
+### F03: Get Ingest Runs
+GET {{baseUrl}}/ingest-runs
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Simulate Ingest Run
+POST {{baseUrl}}/ingest/simulate
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "app": "google_workspace"
+}
+
+### F03: Get Observation Windows
+GET {{baseUrl}}/observation-windows
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Usage Rows
+GET {{baseUrl}}/usage?limit=20
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Single Usage Row
+GET {{baseUrl}}/usage/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Usage Findings
+GET {{baseUrl}}/usage/findings
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Stateless Usage Evaluation
+POST {{baseUrl}}/usage/evaluate
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "user": { "id": "test-eval", "startDate": "2024-01-01T00:00:00Z", "role": "Developer" },
+  "entitlement": {
+    "id": "e-eval",
+    "app": "google_workspace",
+    "name": "Eval Ent",
+    "privilegeLevel": "standard",
+    "dataSensitivity": "internal",
+    "categories": ["Storage"]
+  },
+  "activityTimestamps": ["2026-10-01T00:00:00Z"]
+}
+
+### F03: Get Recommendation Card
+GET {{baseUrl}}/recommendation/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Coverage Guard
+GET {{baseUrl}}/coverage-guard/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Tags
+GET {{baseUrl}}/tags
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Put Tags (Session Overlay)
+PUT {{baseUrl}}/tags
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "targetType": "entitlement",
+  "targetId": "e-drive-admin",
+  "tags": ["Storage", "Admin", "ReviewNeeded"]
+}
+
+### F03: Get Effective Settings
+GET {{baseUrl}}/settings/effective
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Update Effective Settings (What-If Delta)
+PUT {{baseUrl}}/settings/effective
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "unusedWindowDays": {
+    "admin": 30,
+    "standard": 90
+  }
+}
+
+### F03: Reset Effective Settings
+POST {{baseUrl}}/settings/reset
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Clear Session Overlay
+DELETE {{baseUrl}}/session/overlay
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Activity CSV
+GET {{baseUrl}}/export/activity.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Usage CSV
+GET {{baseUrl}}/export/usage.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Inventory CSV
+GET {{baseUrl}}/export/inventory.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Scenario Checks (S3, S6, S7, S8)
+GET {{baseUrl}}/scenario-checks/f03
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: AI Usage Summary
+POST {{baseUrl}}/usage-summary
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "userId": "u-karthik",
+  "showNames": false
+}

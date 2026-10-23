@@ -1,6 +1,6 @@
 import { env } from '../env.js'
 import { createClient } from '@supabase/supabase-js'
-import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../../src/data.js'
+import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence, activity as frontendActivity } from '../../../src/data.js'
 import { computeContentHash, computeMemberCount } from '../engine-ext/hash.js'
 import { mapApp } from '../mappers.js'
 
@@ -272,6 +272,60 @@ async function verifyCounts() {
   }
 }
 
+async function seedActivityEvents() {
+  console.log('Seeding activity events...')
+  for (const act of frontendActivity) {
+    const { error } = await supabase.from('activity_events').upsert({
+      id: act.id,
+      user_id: act.userId,
+      app: mapApp(act.app),
+      at: act.at.includes('T') ? act.at : act.at + 'T00:00:00Z',
+      action: act.action,
+      resource: act.resource || '',
+      action_class: act.actionClass || 'read',
+      is_simulated: false,
+      ingest_run_id: null,
+      created_at: act.at.includes('T') ? act.at : act.at + 'T00:00:00Z',
+    }, { onConflict: 'id' })
+    if (error) console.warn('Activity event seed warning:', error.message)
+  }
+  console.log(`✓ Seeded ${frontendActivity.length} activity events`)
+}
+
+async function seedMappingRules() {
+  console.log('Seeding event mapping rules...')
+  const rules = [
+    { id: 'rule-gw-1', app: 'google_workspace', action_pattern: 'drive.admin.*', entitlement_id: 'e-drive-admin', note: 'Maps administrative drive actions' },
+    { id: 'rule-gw-2', app: 'google_workspace', action_pattern: 'drive.write*', entitlement_id: 'e-drive-write', note: 'Maps write drive actions' },
+    { id: 'rule-gw-3', app: 'google_workspace', action_pattern: 'drive.read', entitlement_id: 'e-support-read', note: 'Maps read drive actions to support read' },
+    { id: 'rule-gh-1', app: 'github', action_pattern: 'repo.push*', entitlement_id: 'e-github-write', note: 'Maps repository push events' },
+    { id: 'rule-gh-2', app: 'github', action_pattern: 'repo.branch.*', entitlement_id: 'e-github-write', note: 'Maps repository branch operations' },
+    { id: 'rule-gh-3', app: 'github', action_pattern: 'repo.read*', entitlement_id: 'e-github-read', note: 'Maps repository read events' },
+    { id: 'rule-gh-4', app: 'github', action_pattern: 'release.artifact.export', entitlement_id: 'e-repo-export', note: 'Maps release artifact export events' },
+    { id: 'rule-me-1', app: 'microsoft_entra', action_pattern: 'directory.role.*', entitlement_id: 'e-entra-admin', note: 'Maps directory role assignment' },
+    { id: 'rule-me-2', app: 'microsoft_entra', action_pattern: 'directory.user.*', entitlement_id: 'e-entra-admin', note: 'Maps directory user read' },
+  ]
+  for (const r of rules) {
+    const { error } = await supabase.from('event_mapping_rules').upsert(r, { onConflict: 'id' })
+    if (error) console.warn('Mapping rule seed warning:', error.message)
+  }
+  console.log(`✓ Seeded ${rules.length} mapping rules`)
+}
+
+async function seedIngestRuns() {
+  console.log('Seeding ingest runs...')
+  const runs = [
+    { id: 'ingest-gw-seed', app: 'google_workspace', at: '2026-10-23T00:00:00Z', window_from: '2026-04-26T00:00:00Z', window_to: '2026-10-23T00:00:00Z', events_pulled: 3, unmapped: 1, status: 'completed', ing_index: null, is_simulated: false, created_at: '2026-10-23T00:00:00Z' },
+    { id: 'ingest-gh-seed', app: 'github', at: '2026-10-23T00:00:00Z', window_from: '2026-07-25T00:00:00Z', window_to: '2026-10-23T00:00:00Z', events_pulled: 1, unmapped: 0, status: 'completed', ing_index: null, is_simulated: false, created_at: '2026-10-23T00:00:00Z' },
+    { id: 'ingest-me-seed', app: 'microsoft_entra', at: '2026-10-23T00:00:00Z', window_from: '2026-09-23T00:00:00Z', window_to: '2026-10-23T00:00:00Z', events_pulled: 1, unmapped: 0, status: 'completed', ing_index: null, is_simulated: false, created_at: '2026-10-23T00:00:00Z' },
+  ]
+  for (const ir of runs) {
+    const { error } = await supabase.from('ingest_runs').upsert(ir, { onConflict: 'id' })
+    if (error) console.warn('Ingest run seed warning:', error.message)
+  }
+  console.log(`✓ Seeded ${runs.length} ingest runs`)
+}
+
 async function main() {
   if (process.argv.includes('--verify')) {
     await verifyCounts()
@@ -288,6 +342,9 @@ async function main() {
   await seedRoleChanges()
   await seedEvidence()
   await seedSyncSchedules()
+  await seedActivityEvents()
+  await seedMappingRules()
+  await seedIngestRuns()
   await verifyCounts()
 
   console.log('\n✓ Seed completed successfully')

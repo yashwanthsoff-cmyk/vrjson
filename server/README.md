@@ -119,3 +119,39 @@ See `docs/FRONTEND_WIRING.md` for manual integration steps.
 - All times are UTC ISO strings
 - The server falls back to MemoryStore if Supabase is unreachable
 - Synthetic data is used throughout - no real people or systems
+
+
+## Feature 3 (F-03) Granted-vs-Used Detector
+
+Feature 3 detects access risk by comparing granted entitlements with observed activity, produces explainable recommendation cards, and respects short retention observation windows.
+
+### Feature 3 Commands
+- **Run F-03 Demo Walkthrough:**
+  ```bash
+  npm run demo:f03
+  ```
+- **Run All Tests:**
+  ```bash
+  npm test
+  ```
+- **Run Typecheck:**
+  ```bash
+  npm run typecheck
+  ```
+
+### Key F-03 Endpoints
+- `GET /api/activity`: List activity events with live re-mapped entitlement IDs.
+- `GET /api/activity/summary`: Total, mapped, and unmapped action counts.
+- `GET /api/mapping-rules`: List mapping rules with specificity scores and match counts.
+- `POST /api/mapping/test`: Test an action string against active glob rules.
+- `POST /api/ingest/simulate`: Safely ingest 3 sample events advancing simulated time.
+- `GET /api/observation-windows`: View coverage and observed days per user/app/entitlement.
+- `GET /api/usage`: List all classified usage rows with recommendations.
+- `GET /api/usage/:userId/:entitlementId`: View a single user entitlement usage row.
+- `GET /api/coverage-guard/:userId/:entitlementId`: View defensive guard status and canRevoke flag.
+- `PUT /api/settings/effective`: Non-destructive what-if settings delta simulation.
+- `GET /api/scenario-checks/f03`: Automatic planted scenario verification (S3, S6, S7, S8).
+- `POST /api/usage-summary`: AI-generated usage explanation with evidence verification and deterministic template fallback.
+- `GET /api/export/*.csv`: CSV exports with formula injection escaping.
+
+See `docs/F03_API.md` and `docs/FRONTEND_WIRING_F03.md` for detailed specifications and integration instructions.

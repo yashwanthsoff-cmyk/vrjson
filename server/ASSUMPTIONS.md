@@ -147,3 +147,43 @@ The prompt mentions dev flags for connector errors.
 - `dev_flags` table stores `simulateConnectorError` as a JSON object mapping App to boolean
 - Reads for that app return frozen data with `x-data-as-of` header
 - Writes for that app return 503 or 409 depending on revoked vs error state
+
+
+## Feature 3 (F-03 Granted-vs-Used Detector) Assumptions
+
+### 1. Live Mapping Precedence
+- Seed `activity` in `src/data.ts` includes a boolean `mapped` flag but does not specify target entitlement IDs.
+- In accordance with the prompt ("LIVE MAPPING WINS"), all event mappings are dynamically evaluated via `computeLiveMapping(event, effectiveRules)`.
+- Precedence for glob matching strictly adheres to:
+  1. Exact app match (`google_workspace`, `microsoft_entra`, `github`).
+  2. Pattern match via glob compiled to anchored regex.
+  3. Most literal characters (highest specificity score).
+  4. Lowest rule ID lexicographically.
+
+### 2. Entra 30-Day Retention & S7 Test Invariant
+- Microsoft Entra logs default to 30 days retention, while standard inactivity policy requires 180 days.
+- In accordance with Scenario S7, Entra usage rows evaluate to `unknown` with `blastRadius: null` and recommendation capped at `review`.
+- No seed Entra activity events map to granted Entra entitlements.
+
+### 3. Session Overlays & What-If Isolation
+- Exploratory user adjustments to settings, tags, and mapping rules are isolated to client sessions via `x-session-id`.
+- Handled by `server/src/engine-ext/overlay.ts` with a 120-minute sliding TTL and a 500-session LRU capacity cap.
+- Non-session requests fall back to baseline settings and seed rules.
+
+### 4. Blast Radius Definition
+- Blast radius is defined as `{ actionsLast90d: number, ownedSharedResources: number }`.
+- Calculated by counting actions performed in the last 90 days before `DEMO_NOW`.
+- Hard-capped at `null` when app log coverage is less than 90 days (such as Entra at 30 days or short logs simulation at 11 days).
+
+### 5. Ingest Simulation
+- `POST /api/ingest/simulate` consumes 3 sample events from `server/src/seed/sampleIngestEvents.json` per invocation.
+- Events receive simulated timestamps equal to `DEMO_NOW + ingIndex * 60000` ms.
+- A process-level mutex prevents race conditions or out-of-order sequence indexing during concurrent simulation requests.
+
+### 6. Groq AI Summary & Safety Guardrails
+- `POST /api/usage-summary` calls Groq `gpt-oss-120b` (with fallback to `gpt-oss-20b`) with a 15-second timeout and 10 req/min rate limit.
+- Verified against banned marketing/compliance words and strict claim linkage to underlying `Evidence` IDs.
+- If verification fails or Groq is unreachable, gracefully falls back to deterministic template explanation from `usageExplain.ts`.
+
+### 7. CSV Formula Injection Safety
+- All CSV download routes (`/api/export/*.csv`) prepend an apostrophe `'` to any cell starting with `=`, `+`, `-`, or `@`.
