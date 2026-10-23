@@ -29,3 +29,7 @@ Added the shared `accessdrift:data` event so decisions, undo, assignment and han
 ## Final verification
 
 Final checks passed: typecheck, lint proxy, 9 automated tests, production build and runtime checks for `/`, `/queue` and `/manus-routes.json`. The branch is pushed to `origin/spec-compliance`. Remaining architectural and feature-depth gaps are recorded in `AUDIT/STATUS.md`; no claim of full spec completion is made.
+
+## Design-system batch — glass console refresh
+
+Applied the supplied Master UI/UX Design System Prompt to the shared stylesheet without changing synthetic-data behavior. Added the spacing/radius/z-index/easing tokens, Inter and Orbitron font roles, light glass surfaces, restrained inset highlights, pill controls, numeric tabular styling, ambient grid with vignette on the background layer only, reduced-motion rules, 1024px tablet and 768px mobile breakpoints, mobile bottom navigation, contrast-safe secondary text and light-only token behavior. Verification: typecheck PASS, 9 tests PASS, production build PASS, desktop and mobile screenshots inspected.
