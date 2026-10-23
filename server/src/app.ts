@@ -71,17 +71,6 @@ export function createApp(store: DataStore) {
     next()
   })
 
-  // Central error handler
-  app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (isApiError(err)) {
-      logger.warn({ error: err.message, requestId: (req as any).id })
-      return res.status(err.status).json(err.toProblem())
-    }
-
-    logger.error({ error: err, requestId: (req as any).id })
-    res.status(500).json(problems.internal().toProblem())
-  })
-
   // Health endpoint
   app.get('/health', async (req, res) => {
     const { healthRoute } = await import('./routes/health.js')
@@ -202,6 +191,17 @@ export function createApp(store: DataStore) {
   app.post('/api/drift-summary', driftSummaryLimiter, async (req, res) => {
     const { driftSummaryRoute } = await import('./routes/driftSummary.js')
     return driftSummaryRoute(store, req, res)
+  })
+
+  // Central error handler (must be after all routes)
+  app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (isApiError(err)) {
+      logger.warn({ error: err.message, requestId: (req as any).id })
+      return res.status(err.status).json(err.toProblem())
+    }
+
+    logger.error({ error: err, requestId: (req as any).id })
+    res.status(500).json(problems.internal().toProblem())
   })
 
   // 404 handler

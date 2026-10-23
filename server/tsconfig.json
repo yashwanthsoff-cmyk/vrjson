@@ -1,12 +1,3 @@
-// IDE LINT NOTE: TypeScript IDE shows deprecation warnings for baseUrl and rootDir.
-// These are IDE-only warnings (not tsc errors) due to:
-// 1. Server imports from parent ../src directory (shared frontend code)
-// 2. baseUrl is required for @engine/* and @contract path aliases
-// 3. Cannot set rootDir without breaking cross-directory imports
-// ACTUAL BUILD: npm run typecheck passes successfully.
-// ACTION: These warnings can be safely ignored or suppressed in IDE settings.
-// Migration needed when upgrading to TypeScript 7.0.
-
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -15,17 +6,18 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": true,
-    "outDir": "./dist",
+    "noEmit": true,
+    "rootDir": "..",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@engine/*": ["../src/engine/*"],
       "@contract": ["../src/types/contract.ts"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "../src/**/*.tsx", "../src/**/*.ts"]
+  "include": ["src/**/*", "../src/engine/**/*", "../src/types/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
