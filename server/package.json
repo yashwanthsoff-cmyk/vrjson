@@ -1,0 +1,38 @@
+{
+  "name": "accessdrift-server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:verify": "tsx src/db/seed.ts --verify",
+    "test": "vitest run",
+    "test:live": "RUN_LIVE=1 vitest run",
+    "scan:secrets": "tsx scripts/scan-secrets.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run test && npm run scan:secrets",
+    "demo": "tsx scripts/demo.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "pino": "^9.6.0",
+    "pg": "^10.2.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.12.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.22.0",
+    "typescript": "^5.8.2",
+    "vitest": "^5.0.5"
+  }
+}
