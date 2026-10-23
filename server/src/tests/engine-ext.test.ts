@@ -63,7 +63,7 @@ describe('engine-ext/asof', () => {
       { id: 's3', app: 'google_workspace', takenAt: '2026-07-01T00:00:00Z', complete: true, memberCount: 12, contentHash: 'hash3' },
     ]
 
-    const result = accessAsOf('google_workspace', '2026-06-15T00:00:00Z', snapshots, [])
+    const result = accessAsOf('google_workspace', '2026-06-15', snapshots, [])
     // s1 is the nearest complete snapshot before 2026-06-15 (s2 is incomplete, s3 is after)
     expect(result.snapshotUsed?.id).toBe('s1')
     expect(result.snapped).toBe(true)
@@ -76,7 +76,7 @@ describe('engine-ext/asof', () => {
       { id: 's2', app: 'google_workspace', takenAt: '2026-05-14T00:00:00Z', complete: true, memberCount: 11, contentHash: 'hash2' },
     ]
 
-    const result = accessAsOf('google_workspace', '2026-03-15T00:00:00Z', snapshots, [])
+    const result = accessAsOf('google_workspace', '2026-03-15', snapshots, [])
     // No complete snapshot on or before 2026-03-15 (s1 is incomplete, s2 is after)
     expect(result.snapshotUsed).toBeNull()
     expect(result.message).toContain('No complete snapshot')
@@ -87,7 +87,7 @@ describe('engine-ext/asof', () => {
       { id: 's1', app: 'google_workspace', takenAt: '2026-03-12T00:00:00Z', complete: false, memberCount: 10, contentHash: 'hash1' },
     ]
 
-    const result = accessAsOf('google_workspace', '2026-03-15T00:00:00Z', snapshots, [])
+    const result = accessAsOf('google_workspace', '2026-03-15', snapshots, [])
     expect(result.snapshotUsed).toBeNull()
     expect(result.message).toContain('No complete snapshot')
   })

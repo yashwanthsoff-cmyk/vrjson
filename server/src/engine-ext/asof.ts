@@ -1,6 +1,6 @@
 import type { App, Grant, Snapshot } from '@contract'
 import type { AccessAsOfApp } from '../types/extra.js'
-import { DEMO_NOW, isValidDate, parseDate } from '../clock.js'
+import { DEMO_NOW, isValidDate, toStartOfDay } from '../clock.js'
 import { isActiveOnDate } from './hash.js'
 
 /**
@@ -17,7 +17,7 @@ export function accessAsOf(
     throw new Error(`Invalid date: ${requestedDate}`)
   }
 
-  const effectiveDate = parseDate(requestedDate).toISOString()
+  const effectiveDate = toStartOfDay(requestedDate)
 
   // Find nearest earlier-or-equal COMPLETE snapshot
   const appSnapshots = snapshots

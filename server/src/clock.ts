@@ -1,4 +1,4 @@
-import { env } from './env'
+import { env } from './env.js'
 
 export const DEMO_NOW = env.DEMO_NOW
 
@@ -35,4 +35,12 @@ export function addMinutes(dateStr: string, minutes: number): string {
   const date = new Date(dateStr)
   date.setMinutes(date.getMinutes() + minutes)
   return date.toISOString()
+}
+
+// Add to start of day for YYYY-MM-DD
+export function toStartOfDay(dateStr: string): string {
+  if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateStr
+  }
+  return `${dateStr}T00:00:00Z`
 }
