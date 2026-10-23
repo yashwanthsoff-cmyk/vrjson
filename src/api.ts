@@ -41,6 +41,7 @@ export const api = {
   async getConnectors() { await wait(); return [...connectors] },
   async revokeConsent(app: string) { await wait(); return log('consent.revoked', app, 'Source revoked. Data frozen as of 2026-10-23.') },
   async restoreConsent(app: string) { await wait(); return log('consent.restored', app, 'Consent restored; simulated first sync is available.') },
+  async getDriftSummary(userId: string, from: string, to: string, showNames: boolean = false) { await wait(); throw new Error('Drift summary not available in static mode. Set VITE_API_MODE=http to use the backend.') },
 }
 
 export type Api = typeof api
