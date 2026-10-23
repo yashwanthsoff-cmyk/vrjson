@@ -46,7 +46,8 @@ try {
       })
     } else {
       console.error('Environment validation failed:')
-      error.errors.forEach((err) => {
+      const zodError = error as z.ZodError<any>
+      zodError.issues.forEach((err: any) => {
         console.error(`  ${err.path.join('.')}: ${err.message}`)
       })
       process.exit(1)

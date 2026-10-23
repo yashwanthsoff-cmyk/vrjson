@@ -210,7 +210,7 @@ export class MemoryStore implements DataStore {
   }
 
   // Grants
-  async listGrants(filters: {}, limit = 100, offset = 0): Promise<Paged<Grant>> {
+  async listGrants(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Grant>> {
     let filtered = [...this.grants]
 
     if (filters.userId) filtered = filtered.filter((g) => g.userId === filters.userId)
@@ -259,7 +259,7 @@ export class MemoryStore implements DataStore {
   }
 
   // Snapshots
-  async listSnapshots(filters: {}, limit = 100, offset = 0): Promise<Paged<Snapshot>> {
+  async listSnapshots(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Snapshot>> {
     let filtered = [...this.snapshots]
 
     if (filters.app) filtered = filtered.filter((s) => s.app === filters.app)
@@ -284,6 +284,21 @@ export class MemoryStore implements DataStore {
     ;(newSnapshot as any).createdAt = snapshot.createdAt || new Date().toISOString()
     this.snapshots.push(newSnapshot)
     return newSnapshot
+  }
+
+  // Append-only enforcement for snapshots - no updates or deletes
+  async updateSnapshot(id: string, changes: Partial<Snapshot>): Promise<void> {
+    throw problems.conflict('Snapshots are append-only: updates not allowed')
+  }
+
+  async deleteSnapshot(id: string): Promise<void> {
+    // Allow deletion if simulated and dev reset is active
+    const snapshot = this.snapshots.find((s) => s.id === id)
+    if (snapshot && (snapshot as any).isSimulated) {
+      this.snapshots = this.snapshots.filter((s) => s.id !== id)
+      return
+    }
+    throw problems.conflict('Snapshots are append-only: deletes not allowed')
   }
 
   // Evidence
@@ -344,7 +359,7 @@ export class MemoryStore implements DataStore {
   }
 
   // Audit
-  async listAudit(filters: {}, limit = 100, offset = 0): Promise<Paged<AuditEvent>> {
+  async listAudit(filters: any = {}, limit = 100, offset = 0): Promise<Paged<AuditEvent>> {
     let filtered = [...this.auditEvents]
 
     if (filters.actorId) filtered = filtered.filter((a) => a.actorId === filters.actorId)
@@ -411,9 +426,8 @@ export class MemoryStore implements DataStore {
   }
 
   // Drift summaries
-  async getDriftSummary(scopeKey: string): Promise<{ cached: boolean; summary: any } | null> {
-    const summary = this.driftSummaries.get(scopeKey)
-    return summary ? { cached: true, summary } : null
+  async getDriftSummary(scopeKey: string): Promise<any | null> {
+    return this.driftSummaries.get(scopeKey) || null
   }
 
   async setDriftSummary(scopeKey: string, summary: any): Promise<void> {
@@ -438,6 +452,7 @@ export class MemoryStore implements DataStore {
       snapshots: 0,
       syncRuns: 0,
       auditEvents: 0,
+      manualFindings: 0,
     }
 
     // Remove simulated entries
@@ -460,6 +475,6 @@ export class MemoryStore implements DataStore {
     // Restore dev flags
     this.devFlags.clear()
 
-    return deleted
+    return { deleted }
   }
 }

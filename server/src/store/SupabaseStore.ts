@@ -49,7 +49,7 @@ export class SupabaseStore implements DataStore {
   }
 
   // Grants
-  async listGrants(filters: {}, limit = 100, offset = 0): Promise<Paged<Grant>> {
+  async listGrants(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Grant>> {
     let query = supabase.from('grants').select('*', { count: 'exact' })
 
     if (filters.userId) query = query.eq('user_id', filters.userId)
@@ -96,7 +96,7 @@ export class SupabaseStore implements DataStore {
   }
 
   // Snapshots
-  async listSnapshots(filters: {}, limit = 100, offset = 0): Promise<Paged<Snapshot>> {
+  async listSnapshots(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Snapshot>> {
     let query = supabase.from('snapshots').select('*', { count: 'exact' })
 
     if (filters.app) query = query.eq('app', filters.app)
@@ -124,6 +124,16 @@ export class SupabaseStore implements DataStore {
     const { data, error } = await supabase.from('snapshots').insert(snapshot).select().single()
     if (error) throw problems.internal(error.message)
     return data as Snapshot
+  }
+
+  async updateSnapshot(id: string, changes: Partial<Snapshot>): Promise<void> {
+    // Snapshots are append-only - this should never be called
+    throw problems.conflict('Snapshots are append-only: updates not allowed')
+  }
+
+  async deleteSnapshot(id: string): Promise<void> {
+    // Snapshots are append-only - this should never be called
+    throw problems.conflict('Snapshots are append-only: deletes not allowed')
   }
 
   // Evidence
@@ -194,7 +204,7 @@ export class SupabaseStore implements DataStore {
   }
 
   // Audit
-  async listAudit(filters: {}, limit = 100, offset = 0): Promise<Paged<AuditEvent>> {
+  async listAudit(filters: any = {}, limit = 100, offset = 0): Promise<Paged<AuditEvent>> {
     let query = supabase.from('audit_events').select('*', { count: 'exact' })
 
     if (filters.actorId) query = query.eq('actor_id', filters.actorId)
@@ -272,13 +282,13 @@ export class SupabaseStore implements DataStore {
   }
 
   // Drift summaries
-  async getDriftSummary(scopeKey: string): Promise<{ cached: boolean; summary: any } | null> {
+  async getDriftSummary(scopeKey: string): Promise<any | null> {
     const { data, error } = await supabase.from('drift_summaries').select('*').eq('scope_key', scopeKey).single()
     if (error) {
       if (error.code === 'PGRST116') return null
       throw problems.internal(error.message)
     }
-    return data ? { cached: true, summary: data } : null
+    return data || null
   }
 
   async setDriftSummary(scopeKey: string, summary: any): Promise<void> {
@@ -313,6 +323,6 @@ export class SupabaseStore implements DataStore {
   async resetSimulated(): Promise<{ deleted: Record<string, number> }> {
     const { data, error } = await supabase.rpc('dev_reset_simulated')
     if (error) throw problems.internal(error.message)
-    return data as { deleted: Record<string, number> }
+    return { deleted: data as Record<string, number> }
   }
 }

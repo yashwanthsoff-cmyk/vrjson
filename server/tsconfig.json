@@ -17,6 +17,6 @@
       "@contract": ["../src/types/contract.ts"]
     }
   },
-  "include": ["src/**/*", "../src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "../src/**/*.tsx", "../src/**/*.ts"]
 }

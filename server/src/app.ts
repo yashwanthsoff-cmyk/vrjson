@@ -1,12 +1,22 @@
 import express from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import { env } from './env.js'
 import { logger } from './logger.js'
 import { isApiError, problems } from './problem.js'
 import { MemoryStore } from './store/MemoryStore.js'
 import { SupabaseStore } from './store/SupabaseStore.js'
 import type { DataStore } from './store/DataStore.js'
+
+// Type assertion for Express request extension
+declare global {
+  namespace Express {
+    interface Request {
+      id?: string
+    }
+  }
+}
 
 export function createApp(store: DataStore) {
   const app = express()
@@ -16,10 +26,17 @@ export function createApp(store: DataStore) {
   app.use(cors({ origin: env.CORS_ORIGIN }))
   app.use(express.json({ limit: '100kb' }))
 
+  // Rate limit for drift-summary
+  const driftSummaryLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // 10 requests per minute
+    message: 'Too many drift summary requests, please try again later.',
+  })
+
   // Request ID middleware
   app.use((req, res, next) => {
-    req.id = req.headers['x-request-id'] as string || `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-    res.setHeader('x-request-id', req.id)
+    ;(req as any).id = req.headers['x-request-id'] as string || `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    res.setHeader('x-request-id', (req as any).id)
     next()
   })
 
@@ -57,11 +74,11 @@ export function createApp(store: DataStore) {
   // Central error handler
   app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (isApiError(err)) {
-      logger.warn({ error: err.message, requestId: req.id })
+      logger.warn({ error: err.message, requestId: (req as any).id })
       return res.status(err.status).json(err.toProblem())
     }
 
-    logger.error({ error: err, requestId: req.id })
+    logger.error({ error: err, requestId: (req as any).id })
     res.status(500).json(problems.internal().toProblem())
   })
 
@@ -179,6 +196,12 @@ export function createApp(store: DataStore) {
   app.post('/api/audit/event', async (req, res) => {
     const { auditEventRoute } = await import('./routes/auditEvent.js')
     return auditEventRoute(store, req, res)
+  })
+
+  // Drift summary route (with rate limiting)
+  app.post('/api/drift-summary', driftSummaryLimiter, async (req, res) => {
+    const { driftSummaryRoute } = await import('./routes/driftSummary.js')
+    return driftSummaryRoute(store, req, res)
   })
 
   // 404 handler
