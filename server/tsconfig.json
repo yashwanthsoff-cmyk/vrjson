@@ -7,10 +7,14 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": "./dist",
+    // Note: Cannot set rootDir because server imports from parent ../src directory
+    // This causes TypeScript to expect all files under a single root directory
+    // When upgrading to TypeScript 7.0, need to migrate path resolution
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    // baseUrl is deprecated in TypeScript 7.0 but required for path aliases (@engine/*, @contract)
     "baseUrl": ".",
     "paths": {
       "@engine/*": ["../src/engine/*"],
