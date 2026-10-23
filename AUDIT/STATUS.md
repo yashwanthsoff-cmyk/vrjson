@@ -68,3 +68,5 @@ PASS = present, data-driven, interactive and evidenced. PARTIAL = present but in
 |---|---|---|
 | 1 | Contract, schemas, engine safety, seed manifest, session store | PASS: typecheck, lint proxy, 5 tests and build |
 | 2 | Static/HTTP API selector, HTTP client scaffold, error mapping | IN PROGRESS: one strict type issue fixed; verification rerun required |
+
+| 3 | Shared session store, delegated action handling, decision reason selector and append-only undo | PASS: typecheck, 7 tests and build |

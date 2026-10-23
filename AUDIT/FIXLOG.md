@@ -18,3 +18,12 @@
 - Verification pending.
 
 Batch 2 verification: typecheck PASS, lint proxy PASS, 5 tests PASS, production build PASS.
+
+## Batch 3 — shared interaction coverage and decision undo
+
+- Connected `AppShell` preferences and scenario toggles to `src/store/session.ts`.
+- Added app-shell delegated `data-action` handlers for controls without local handlers.
+- Added append-only `api.undo()` and an Undo action to the finding drawer.
+- Added reason-code selector to the finding decision drawer.
+- Added `src/action-coverage.test.ts` crawler; 7 tests now pass.
+- Verification: typecheck PASS, action crawler PASS, engine tests PASS, production build PASS.

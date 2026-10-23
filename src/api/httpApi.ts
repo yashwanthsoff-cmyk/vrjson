@@ -11,6 +11,7 @@ export function createHttpApi() {
     getFindings: () => request<Finding[]>('/api/findings'),
     getFinding: (id: string) => request<Finding>(`/api/findings/${id}`),
     decide: (id: string, decision: string) => request<{ finding: Finding; event: unknown }>(`/api/findings/${id}/decisions`, { method: 'POST', body: JSON.stringify({ decision }) }),
+    undo: (id: string) => request<unknown>(`/api/decisions/${id}/undo`, { method: 'POST' }),
     assign: (id: string, ownerId: string, dueDate: string) => request<Finding>(`/api/findings/${id}`, { method: 'PATCH', body: JSON.stringify({ ownerId, dueDate }) }),
     comment: (id: string, note: string) => request<unknown>(`/api/findings/${id}/comments`, { method: 'POST', body: JSON.stringify({ note }) }),
     createHandoff: (id: string, decision: 'approve_revoke' | 'approve_downgrade') => request<unknown>(`/api/findings/${id}/decisions`, { method: 'POST', body: JSON.stringify({ decision }) }),
