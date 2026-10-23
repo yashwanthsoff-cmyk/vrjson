@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { classifyUsage, recommend, replaySnapshot, score, validateClaims } from './index'
+import { findings } from '../data'
 
 describe('AccessDrift engine invariants', () => {
   it('never classifies short coverage as unused', () => { expect(classifyUsage({ observedDays: 11, windowDays: 45, lastUsedAt: null }).state).toBe('unknown') })
@@ -8,4 +9,5 @@ describe('AccessDrift engine invariants', () => {
   it('normalizes weights before scoring', () => { expect(score({ severity: 1, sensitivity: 1, evidenceStrength: 1, staleness: 1, weights: { severity: 3, sensitivity: 2, evidenceStrength: 1, staleness: 0 } })).toBe(100) })
   it('rejects a claim whose value differs from evidence', () => { const result = validateClaims([{ id: 's1', claims: [{ id: 'c1', field: 'daysAgo', value: 140, evidenceId: 'e1' }] }], [{ id: 'e1', type: 'activity', occurredAt: '2026-10-23', source: 'seed', payload: { daysAgo: 3 } }]); expect(result.passed).toBe(false); expect(result.failures).toHaveLength(1) })
   it('skips incomplete snapshots and names a corrupted snapshot', () => { const incomplete = replaySnapshot({ id: 's-incomplete', app: 'Entra', date: '2026-03-12', complete: false, members: 2, hash: 'skip' }); const failed = replaySnapshot({ id: 's-corrupt', app: 'Google', date: '2026-10-23', complete: true, members: 2, hash: 'sha256:x' }, true); expect(incomplete.status).toBe('skipped'); expect(failed).toMatchObject({ status: 'failed', snapshotId: 's-corrupt' }) })
+  it('reproduces the planted core scenario values', () => { const meera = findings.find((item) => item.id === 'f-003')!; const rohan = findings.find((item) => item.id === 'f-006')!; const karthik = findings.find((item) => item.id === 'f-001')!; const divya = findings.find((item) => item.id === 'f-002')!; const aarav = findings.find((item) => item.id === 'f-004')!; expect([meera.usage.observedDays, meera.usage.state, meera.recommendation]).toEqual([143, 'unused', 'Revoke']); expect(rohan.status).toBe('kept'); expect(karthik.recommendation).toBe('Revoke'); expect(divya.peerText).toBe('Held by 1 of 24 peers (4%)'); expect(aarav.usage.state).toBe('unknown') })
 })

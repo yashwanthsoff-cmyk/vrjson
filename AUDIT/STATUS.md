@@ -72,3 +72,5 @@ PASS = present, data-driven, interactive and evidenced. PARTIAL = present but in
 | 3 | Shared session store, delegated action handling, decision reason selector and append-only undo | PASS: typecheck, 7 tests and build |
 
 | 4 | F-09 claim validation/fallback, replay integrity, corrupt snapshot simulation, consent revoke/restore | PASS: typecheck, 8 tests and build |
+
+| 5 | API-backed queue refresh after decisions/undo/assignment/handoff and core seeded scenario assertions | PASS: typecheck, 9 tests and build |

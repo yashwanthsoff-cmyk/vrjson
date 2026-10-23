@@ -36,3 +36,10 @@ Batch 2 verification: typecheck PASS, lint proxy PASS, 5 tests PASS, production 
 - Added session-only corrupt-snapshot control in Dev panel and failed snapshot naming.
 - Added consent revoke/restore API mutations, per-source state, read-only scope metadata and exact source-revoked banner.
 - Verification: typecheck PASS, 8 tests PASS, production build PASS.
+
+## Batch 5 — live queue refresh and seeded scenario proof
+
+- Added a shared `accessdrift:data` event so decisions, undo, assignment and handoff creation refresh the queue immediately.
+- Queue metrics and rows now use API-backed current findings rather than only the seed array after mutations.
+- Added scenario assertions for Meera, Rohan, Karthik, Divya and Aarav; the suite now has 9 passing tests.
+- Verification: typecheck PASS, 9 tests PASS, production build PASS.
