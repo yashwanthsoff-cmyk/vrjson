@@ -8,8 +8,8 @@ const querySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   complete: z.string().transform((v) => v === 'true').optional(),
-  limit: z.string().transform(Number).default('100'),
-  offset: z.string().transform(Number).default('0'),
+  limit: z.coerce.number().default(100),
+  offset: z.coerce.number().default(0),
 })
 
 export async function snapshotsRoute(store: DataStore, req: Request, res: Response) {

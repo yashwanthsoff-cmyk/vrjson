@@ -27,6 +27,8 @@ export async function performReplayCheck(
     targetType: 'snapshot',
     targetId: snapshotId || 'all',
     detail: `Replay check on ${result.scope === 'one' ? snapshotId : 'all snapshots'}`,
+    prevHash: '',
+    hash: '',
   })
 
   return result

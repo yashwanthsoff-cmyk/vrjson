@@ -9,7 +9,7 @@ export async function evidenceRoute(store: DataStore, req: Request, res: Respons
     throw problems.badRequest('Evidence ID is required')
   }
 
-  const evidence = await store.getEvidenceById(id)
+  const evidence = await store.getEvidenceById(Array.isArray(id) ? id[0] : id)
 
   if (!evidence) {
     throw problems.notFound('Evidence not found')

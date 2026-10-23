@@ -42,6 +42,8 @@ export async function devFlagsRoute(store: DataStore, req: Request, res: Respons
     targetType: 'dev_flags',
     targetId: 'global',
     detail: JSON.stringify(flags),
+    prevHash: '',
+    hash: '',
   })
 
   res.json({ success: true, flags })
@@ -60,6 +62,8 @@ export async function devResetRoute(store: DataStore, req: Request, res: Respons
     targetType: 'system',
     targetId: 'reset',
     detail: 'Dev reset initiated',
+    prevHash: '',
+    hash: '',
   })
 
   const result = await store.resetSimulated()

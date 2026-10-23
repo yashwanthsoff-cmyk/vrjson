@@ -14,7 +14,7 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   DATABASE_URL: z.string().optional(),
   STORE: z.enum(['supabase', 'memory']).default('supabase'),
-  PORT: z.string().transform(Number).default('8787'),
+  PORT: z.coerce.number().default(8787),
   CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
   DEMO_NOW: z.string().datetime(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),

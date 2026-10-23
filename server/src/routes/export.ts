@@ -70,6 +70,8 @@ export async function exportDiffCsvRoute(store: DataStore, req: Request, res: Re
     targetType: 'diff',
     targetId: `${userId}-${a}-${b}`,
     detail: `Diff export for user ${userId} between ${a} and ${b}`,
+    prevHash: '',
+    hash: '',
   })
 
   res.setHeader('Content-Type', 'text/csv')

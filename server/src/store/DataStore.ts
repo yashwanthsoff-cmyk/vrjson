@@ -11,15 +11,15 @@ export interface DataStore {
   getEntitlementById(id: string): Promise<{ id: string; app: App; name: string; kind: 'role' | 'group' | 'permission'; privilegeLevel: 'read' | 'write' | 'admin'; dataSensitivity: 'public' | 'internal' | 'confidential' | 'pii_financial'; categories: string[]; seasonal?: boolean; downgradeToId?: string; version: number } | null>
 
   // Grants
-  listGrants(filters: { userId?: string; app?: App; entitlementId?: string; source?: string; activeOn?: string; removed?: boolean }, limit?: number, offset?: number): Promise<Paged<Grant>>
+  listGrants(filters: any, limit?: number, offset?: number): Promise<Paged<Grant>>
   getGrantById(id: string): Promise<Grant | null>
-  insertGrant(grant: Omit<Grant, 'id'> & { id?: string }): Promise<Grant>
+  insertGrant(grant: Omit<Grant, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Grant>
   updateGrantRemovedAt(id: string, removedAt: string | null, lastSeenSnapshotId: string | null): Promise<void>
 
   // Snapshots
-  listSnapshots(filters: { app?: App; from?: string; to?: string; complete?: boolean }, limit?: number, offset?: number): Promise<Paged<Snapshot>>
+  listSnapshots(filters: any, limit?: number, offset?: number): Promise<Paged<Snapshot>>
   getSnapshotById(id: string): Promise<Snapshot | null>
-  insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string }): Promise<Snapshot>
+  insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Snapshot>
 
   // Evidence
   getEvidenceById(id: string): Promise<Evidence | null>
@@ -37,8 +37,8 @@ export interface DataStore {
   insertRoleChange(change: Omit<RoleChange, 'id'> & { id?: string }): Promise<RoleChange>
 
   // Audit
-  listAudit(filters: { actorId?: string; action?: string; targetType?: string; from?: string; to?: string; q?: string }, limit?: number, offset?: number): Promise<Paged<AuditEvent>>
-  insertAudit(event: Omit<AuditEvent, 'id'> & { id?: string }): Promise<AuditEvent>
+  listAudit(filters: any, limit?: number, offset?: number): Promise<Paged<AuditEvent>>
+  insertAudit(event: Omit<AuditEvent, 'id'> & { id?: string; prevHash?: string; hash?: string }): Promise<AuditEvent>
 
   // Connectors
   listConnectors(): Promise<Connector[]>

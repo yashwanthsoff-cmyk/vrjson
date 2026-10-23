@@ -234,11 +234,13 @@ export class MemoryStore implements DataStore {
     return this.grants.find((g) => g.id === id) || null
   }
 
-  async insertGrant(grant: Omit<Grant, 'id'> & { id?: string }): Promise<Grant> {
+  async insertGrant(grant: Omit<Grant, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Grant> {
     const newGrant: Grant = {
       id: grant.id || `grant-${String(this.grants.length + 1).padStart(4, '0')}`,
       ...grant,
     }
+    ;(newGrant as any).isSimulated = grant.isSimulated || false
+    ;(newGrant as any).createdAt = grant.createdAt || new Date().toISOString()
     this.grants.push(newGrant)
     return newGrant
   }
@@ -273,11 +275,13 @@ export class MemoryStore implements DataStore {
     return this.snapshots.find((s) => s.id === id) || null
   }
 
-  async insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string }): Promise<Snapshot> {
+  async insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Snapshot> {
     const newSnapshot: Snapshot = {
       id: snapshot.id || `snap-${Date.now()}`,
       ...snapshot,
     }
+    ;(newSnapshot as any).isSimulated = snapshot.isSimulated || false
+    ;(newSnapshot as any).createdAt = snapshot.createdAt || new Date().toISOString()
     this.snapshots.push(newSnapshot)
     return newSnapshot
   }
@@ -357,10 +361,17 @@ export class MemoryStore implements DataStore {
     return { items, total: filtered.length, limit, offset }
   }
 
-  async insertAudit(event: Omit<AuditEvent, 'id'> & { id?: string }): Promise<AuditEvent> {
+  async insertAudit(event: Omit<AuditEvent, 'id'> & { id?: string; prevHash?: string; hash?: string }): Promise<AuditEvent> {
     const newEvent: AuditEvent = {
       id: event.id || `au-${Date.now()}`,
-      ...event,
+      at: event.at,
+      actorId: event.actorId,
+      action: event.action,
+      targetType: event.targetType,
+      targetId: event.targetId,
+      detail: event.detail,
+      prevHash: event.prevHash || '',
+      hash: event.hash || '',
     }
     this.auditEvents.push(newEvent)
     return newEvent

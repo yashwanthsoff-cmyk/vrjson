@@ -8,8 +8,8 @@ const querySchema = z.object({
   userId: z.string().optional(),
   app: z.enum(['google_workspace', 'microsoft_entra', 'github']).optional(),
   q: z.string().optional(),
-  limit: z.string().transform(Number).default('100'),
-  offset: z.string().transform(Number).default('0'),
+  limit: z.coerce.number().default(100),
+  offset: z.coerce.number().default(0),
 })
 
 export async function inventoryRoute(store: DataStore, req: Request, res: Response) {

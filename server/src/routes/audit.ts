@@ -10,8 +10,8 @@ const querySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   q: z.string().optional(),
-  limit: z.string().transform(Number).default('100'),
-  offset: z.string().transform(Number).default('0'),
+  limit: z.coerce.number().default(100),
+  offset: z.coerce.number().default(0),
 })
 
 export async function auditRoute(store: DataStore, req: Request, res: Response) {

@@ -22,11 +22,13 @@ export class ApiError extends Error {
 }
 
 export const problems = {
+  badRequest: (detail: string) => new ApiError('bad_request', 400, 'Bad Request', detail),
   validation: (detail: string) => new ApiError('validation', 400, 'Validation Error', detail),
   notFound: (detail: string) => new ApiError('not_found', 404, 'Not Found', detail),
   conflict: (detail: string) => new ApiError('conflict', 409, 'Conflict', detail),
   forbidden: (detail: string) => new ApiError('forbidden', 403, 'Forbidden', detail),
   rateLimited: (detail: string) => new ApiError('rate_limited', 429, 'Rate Limited', detail),
+  serviceUnavailable: (detail: string) => new ApiError('unavailable', 503, 'Service Unavailable', detail),
   unavailable: (detail: string) => new ApiError('unavailable', 503, 'Service Unavailable', detail),
   internal: (detail: string = 'An internal error occurred') => new ApiError('internal', 500, 'Internal Server Error', detail),
 }

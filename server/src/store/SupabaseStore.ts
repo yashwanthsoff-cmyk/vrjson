@@ -80,7 +80,7 @@ export class SupabaseStore implements DataStore {
     return data as Grant
   }
 
-  async insertGrant(grant: Omit<Grant, 'id'> & { id?: string }): Promise<Grant> {
+  async insertGrant(grant: Omit<Grant, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Grant> {
     const { data, error } = await supabase.from('grants').insert(grant).select().single()
     if (error) throw problems.internal(error.message)
     return data as Grant
@@ -120,7 +120,7 @@ export class SupabaseStore implements DataStore {
     return data as Snapshot
   }
 
-  async insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string }): Promise<Snapshot> {
+  async insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Snapshot> {
     const { data, error } = await supabase.from('snapshots').insert(snapshot).select().single()
     if (error) throw problems.internal(error.message)
     return data as Snapshot

@@ -25,11 +25,11 @@ export function createApp(store: DataStore) {
 
   // Actor and session middleware
   app.use(async (req, res, next) => {
-    const actorId = req.headers['x-actor-id'] as string || 'rev-asha' // Default to Asha Rao
-    const sessionId = req.headers['x-session-id'] as string || `sess-${Date.now()}`
+    const actorId = (req.headers['x-actor-id'] as string) || 'rev-asha' // Default to Asha Rao
+    const sessionId = (req.headers['x-session-id'] as string) || `sess-${Date.now()}`
 
-    (req as any).actorId = actorId
-    (req as any).sessionId = sessionId
+    ;(req as any).actorId = actorId
+    ;(req as any).sessionId = sessionId
 
     // Set x-data-as-of header (last good sync time - using current time for now)
     const now = new Date().toISOString()
@@ -151,6 +151,34 @@ export function createApp(store: DataStore) {
   app.post('/api/dev/reset', async (req, res) => {
     const { devResetRoute } = await import('./routes/dev.js')
     return devResetRoute(store, req, res)
+  })
+
+  // Sync routes
+  app.post('/api/sync/simulate', async (req, res) => {
+    const { syncSimulateRoute } = await import('./routes/sync.js')
+    return syncSimulateRoute(store, req, res)
+  })
+
+  app.put('/api/schedule/:app', async (req, res) => {
+    const { scheduleUpdateRoute } = await import('./routes/sync.js')
+    return scheduleUpdateRoute(store, req, res)
+  })
+
+  // Findings routes
+  app.post('/api/findings/manual', async (req, res) => {
+    const { manualFindingsRoute } = await import('./routes/findings.js')
+    return manualFindingsRoute(store, req, res)
+  })
+
+  app.get('/api/findings/manual', async (req, res) => {
+    const { getManualFindingsRoute } = await import('./routes/findings.js')
+    return getManualFindingsRoute(store, req, res)
+  })
+
+  // Audit event route
+  app.post('/api/audit/event', async (req, res) => {
+    const { auditEventRoute } = await import('./routes/auditEvent.js')
+    return auditEventRoute(store, req, res)
   })
 
   // 404 handler

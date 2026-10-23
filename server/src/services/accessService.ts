@@ -24,8 +24,9 @@ export async function getAccessAsOf(
     perApp.push(result)
 
     if (result.snapshotUsed) {
+      const snapshotTakenAt = result.snapshotUsed.takenAt
       const appGrants = grants.items.filter(
-        (g) => g.app === app && g.grantedAt <= result.snapshotUsed.takenAt && (g.removedAt === null || g.removedAt > result.snapshotUsed.takenAt)
+        (g) => g.app === app && g.grantedAt <= snapshotTakenAt && (g.removedAt === null || g.removedAt > snapshotTakenAt)
       )
       allPermissions.push(...appGrants)
     }
