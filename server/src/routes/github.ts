@@ -68,7 +68,7 @@ export async function githubSyncRoute(store: DataStore, req: any, res: any) {
       coverage: result.coverage,
     }
 
-    const run = {
+    const run: any = {
       id: syncRunId,
       app: 'github',
       status: 'completed',

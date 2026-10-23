@@ -78,3 +78,6 @@ export const env = parsed
 
 export const isDev = env.NODE_ENV === 'development'
 export const isTest = env.NODE_ENV === 'test'
+
+export const isLive = env.APP_MODE === 'live'
+export const isDemo = env.APP_MODE === 'demo'
