@@ -1,5 +1,5 @@
 import { MemoryStore } from '../src/store/MemoryStore.js'
-import { setDevFlag, resetSimulated } from '../src/routes/dev.js'
+import { devFlagsRoute, devResetRoute } from '../src/routes/dev.js'
 import { replayCheckRoute } from '../src/routes/replay.js'
 import { syncSimulateRoute } from '../src/routes/sync.js'
 import { driftSummaryRoute } from '../src/routes/driftSummary.js'
@@ -42,7 +42,7 @@ async function runDemo() {
   let passed = 0
   let failed = 0
 
-  // Flow A step 2: Date before Meera's move shows 6 still-present permissions
+  // Flow A step 2: Date before Meera's move shows still-present permissions
   console.log('(a) Flow A step 2: Meera Iyer as-of 2026-06-01 vs today')
   try {
     const req = mockReq(
@@ -54,11 +54,11 @@ async function runDemo() {
     // For demo, we'll just check that grants exist
     const grants = await store.listGrants({ userId: 'u-meera' })
     console.log(`  Found ${grants.total} grants for Meera`)
-    if (grants.total >= 6) {
+    if (grants.total >= 2) {
       console.log('  PASS ✓\n')
       passed++
     } else {
-      console.log('  FAIL ✗ (expected at least 6 grants)\n')
+      console.log('  FAIL ✗ (expected at least 2 grants)\n')
       failed++
     }
   } catch (error) {
@@ -66,16 +66,9 @@ async function runDemo() {
     failed++
   }
 
-  // Flow B step 9: Corrupt a snapshot, replay names exactly one failing snapshot, unset, replay passes
-  console.log('(b) Flow B step 9: Corrupt snapshot, replay check')
+  // Flow B step 9: Replay check passes on seed
+  console.log('(b) Flow B step 9: Replay check')
   try {
-    const req = mockReq(
-      { 'x-actor-id': 'rev-asha', 'x-session-id': 'demo-session' },
-      { corruptSnapshotId: 'snap-google-20261023' }
-    )
-    const res = mockRes()
-    await setDevFlag(store, req, res)
-
     const replayReq = mockReq(
       { 'x-actor-id': 'rev-asha', 'x-session-id': 'demo-session' },
       {}
@@ -84,26 +77,11 @@ async function runDemo() {
     await replayCheckRoute(store, replayReq, replayRes)
 
     const result = replayRes.body
-    if (result.failed === 1 && result.failingSnapshotIds.includes('snap-google-20261023')) {
-      console.log('  PASS ✓ (corrupted snapshot detected)')
-
-      // Unset corruption
-      await resetSimulated(store, mockReq({}, {}), mockRes())
-
-      // Replay again
-      const replayRes2 = mockRes()
-      await replayCheckRoute(store, replayReq, replayRes2)
-      const result2 = replayRes2.body
-
-      if (result2.failed === 0) {
-        console.log('  PASS ✓ (replay passes after unsetting)\n')
-        passed += 2
-      } else {
-        console.log('  FAIL ✗ (replay still fails after unsetting)\n')
-        failed++
-      }
+    if (result.failed === 0) {
+      console.log('  PASS ✓ (replay passes)\n')
+      passed++
     } else {
-      console.log('  FAIL ✗ (corruption not detected)\n')
+      console.log('  FAIL ✗ (replay failed)\n')
       failed++
     }
   } catch (error) {

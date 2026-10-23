@@ -17,6 +17,13 @@ export async function accessAsOfRoute(store: DataStore, req: Request, res: Respo
 
   const { userId, date } = parsed.data
 
+  // Reject future dates
+  const requestedDate = new Date(date)
+  const now = new Date()
+  if (requestedDate > now) {
+    throw problems.badRequest('Future dates are not allowed')
+  }
+
   const result = await getAccessAsOf(store, userId, date)
   res.json(result)
 }

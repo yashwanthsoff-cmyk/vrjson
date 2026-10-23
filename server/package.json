@@ -14,6 +14,7 @@
     "scan:secrets": "tsx scripts/scan-secrets.ts",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run test && npm run scan:secrets",
+    "verify:f02": "tsx src/scripts/verifyF02.ts",
     "demo": "tsx scripts/demo.ts",
     "routes:list": "tsx src/scripts/listRoutes.ts"
   },
@@ -33,6 +34,7 @@
     "@types/express": "^5.0.1",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.12.0",
+    "@types/supertest": "^7.2.1",
     "supertest": "^7.0.0",
     "tsx": "^4.22.0",
     "typescript": "^5.8.2",
