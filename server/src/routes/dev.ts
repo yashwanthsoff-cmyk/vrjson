@@ -2,7 +2,7 @@ import type { DataStore } from '../store/DataStore.js'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { problems } from '../problem.js'
-import { env } from '../env.js'
+import { env, isLive } from '../env.js'
 
 const flagsSchema = z.object({
   corruptSnapshotId: z.string().nullable().optional(),
@@ -13,6 +13,13 @@ const flagsSchema = z.object({
 export async function devFlagsRoute(store: DataStore, req: Request, res: Response) {
   if (env.NODE_ENV === 'production') {
     throw problems.forbidden('Dev routes are not available in production')
+  }
+
+  // Dev flags are only available in demo mode
+  if (isLive) {
+    return res.status(410).json(
+      problems.unavailable('Dev flags are not available in live mode. Use APP_MODE=demo for simulation.')
+    )
   }
 
   const parsed = flagsSchema.safeParse(req.body)
@@ -52,6 +59,13 @@ export async function devFlagsRoute(store: DataStore, req: Request, res: Respons
 export async function devResetRoute(store: DataStore, req: Request, res: Response) {
   if (env.NODE_ENV === 'production') {
     throw problems.forbidden('Dev routes are not available in production')
+  }
+
+  // Dev reset is only available in demo mode
+  if (isLive) {
+    return res.status(410).json(
+      problems.unavailable('Dev reset is not available in live mode. Use APP_MODE=demo for simulation.')
+    )
   }
 
   // Write surviving audit event first

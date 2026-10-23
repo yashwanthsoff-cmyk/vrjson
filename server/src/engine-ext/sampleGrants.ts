@@ -1,5 +1,6 @@
 import type { App, Grant } from '@contract'
 import sampleSyncGrants from '../seed/sampleSyncGrants.json' assert { type: 'json' }
+import { isLive } from '../env.js'
 
 const appMapping: Record<string, App> = {
   'google_workspace': 'google_workspace',
@@ -14,8 +15,13 @@ const usedSamples = new Map<App, Set<string>>()
  * Rule 11: Sample grants.
  * withChange=true consumes the next unused sample for that app.
  * Returns null if exhausted.
+ * NOT AVAILABLE IN LIVE MODE.
  */
 export function consumeSampleGrant(app: App, simulatedAt: string, firstSeenSnapshotId: string): Omit<Grant, 'id'> | null {
+  if (isLive) {
+    throw new Error('Sample grants are not available in live mode. Use APP_MODE=demo for simulation.')
+  }
+
   const samples = sampleSyncGrants[app as keyof typeof sampleSyncGrants] as Array<{ userId: string; entitlementId: string }>
   if (!samples) return null
 

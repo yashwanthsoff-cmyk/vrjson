@@ -21,6 +21,7 @@ import { logger } from '../logger.js'
 import { mapApp, reverseApp } from '../mappers.js'
 import { resetIngestSimulation } from '../engine-ext/ingestSim.js'
 import { clearAllSessionOverlays } from '../engine-ext/overlay.js'
+import { isLive } from '../env.js'
 
 // Generate minimal grants from findings
 function generateGrantsFromFindings(): Grant[] {
@@ -137,6 +138,9 @@ export class MemoryStore implements DataStore {
   private usageSummaries = new Map<string, UsageSummary>()
 
   constructor() {
+    if (isLive) {
+      throw new Error('MemoryStore with seed data is not allowed in live mode. Use STORE=supabase')
+    }
     this.initialize()
   }
 

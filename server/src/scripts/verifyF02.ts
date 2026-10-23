@@ -227,7 +227,7 @@ async function verifyA13() {
 
 async function verifyA14() {
   console.log('\n=== A14: Safety (no secrets in logs) ===')
-  check('Groq key not exposed', 'true', 'true', !env.GROQ_API_KEY.includes('gsk_') || env.GROQ_API_KEY.length > 20)
+  check('Groq key not exposed', 'true', 'true', !env.GROQ_API_KEY?.includes('gsk_') || ((env.GROQ_API_KEY?.length ?? 0) > 20))
   check('Service role key not exposed', 'true', 'true', !env.SUPABASE_SERVICE_ROLE_KEY.includes('eyJ') || env.SUPABASE_SERVICE_ROLE_KEY.length > 20)
 }
 

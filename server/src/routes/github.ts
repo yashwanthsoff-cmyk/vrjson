@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { syncGitHub } from '../connectors/github/index.js'
+import { analyzeFinding, generateCacheKey } from '../connectors/groq/index.js'
 import { env } from '../env.js'
 import { logger } from '../logger.js'
 import type { DataStore } from '../store/DataStore.js'
@@ -119,8 +120,61 @@ export async function githubSyncRoute(store: DataStore, req: any, res: any) {
       logger.info({ findingCount: findings.length }, 'Generated drift findings')
     }
 
-    // Stage 4: AI analysis (placeholder for Phase 6)
-    logger.info({ syncRunId, stage: 'ai_analysis' }, 'AI analysis not yet implemented')
+    // Stage 4: AI analysis
+    logger.info({ syncRunId, stage: 'ai_analysis', findingCount: findings.length }, 'Starting AI analysis')
+
+    let aiAnalysisCount = 0
+    let aiAnalysisFailed = 0
+
+    for (const finding of findings) {
+      const evidenceVersion = `v1-${snapshotId}`
+      const cacheKey = generateCacheKey(finding.id, 1, evidenceVersion, env.GROQ_MODEL)
+
+      // Build analysis request from finding data
+      const analysisRequest = {
+        findingId: finding.id,
+        findingVersion: 1,
+        evidenceVersion,
+        findingType: finding.type,
+        ruleId: finding.ruleId,
+        beforePermission: finding.before ? `${finding.before.userId}:${finding.before.entitlementId}` : null,
+        afterPermission: finding.after ? `${finding.after.userId}:${finding.after.entitlementId}` : null,
+        repoFullName: 'unknown', // Would need to resolve from entitlementId
+        login: 'unknown', // Would need to resolve from userId
+        timestamps: {
+          grantAddedAt: finding.after?.grantedAt || null,
+          grantRemovedAt: finding.before?.removedAt || null,
+        },
+        coverageFlags: {
+          hasActivityEvidence: false, // Phase 6 limitation: no activity evidence yet
+          coverageDays: 0,
+        },
+      }
+
+      try {
+        const result = await analyzeFinding(analysisRequest, finding.evidenceIds)
+
+        if (result.success && result.analysis) {
+          // Store analysis (would need SupabaseStore.insertAIAnalysis in full implementation)
+          logger.info({ findingId: finding.id, model: result.model }, 'AI analysis completed')
+          aiAnalysisCount++
+        } else {
+          logger.warn({ findingId: finding.id, error: result.error }, 'AI analysis failed')
+          aiAnalysisFailed++
+        }
+      } catch (error) {
+        logger.error({ findingId: finding.id, error }, 'AI analysis error')
+        aiAnalysisFailed++
+      }
+    }
+
+    logger.info({ syncRunId, aiAnalysisCount, aiAnalysisFailed }, 'AI analysis complete')
+
+    // Mark sync as partial if AI analysis failed for any finding
+    if (aiAnalysisFailed > 0 && env.GROQ_ENABLED) {
+      run.status = 'partial'
+      run.error = `AI analysis failed for ${aiAnalysisFailed} findings`
+    }
 
     // Finalize run stage
     run.stage = 'completed'
