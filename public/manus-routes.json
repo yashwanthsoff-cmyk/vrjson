@@ -1,6 +1,8 @@
 {
   "routes": [
-    {"path":"/","title":"Queue"},
+    {"path":"/","title":"AccessDrift · Permission drift, made reviewable"},
+    {"path":"/login","title":"Sign in to AccessDrift"},
+    {"path":"/signup","title":"Create an AccessDrift demo session"},
     {"path":"/queue","title":"Review queue"},
     {"path":"/handoffs","title":"Handoffs"},
     {"path":"/notifications","title":"Notifications"},

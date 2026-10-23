@@ -33,3 +33,7 @@ Final checks passed: typecheck, lint proxy, 9 automated tests, production build 
 ## Design-system batch — glass console refresh
 
 Applied the supplied Master UI/UX Design System Prompt to the shared stylesheet without changing synthetic-data behavior. Added the spacing/radius/z-index/easing tokens, Inter and Orbitron font roles, light glass surfaces, restrained inset highlights, pill controls, numeric tabular styling, ambient grid with vignette on the background layer only, reduced-motion rules, 1024px tablet and 768px mobile breakpoints, mobile bottom navigation, contrast-safe secondary text and light-only token behavior. Verification: typecheck PASS, 9 tests PASS, production build PASS, desktop and mobile screenshots inspected.
+
+## Public landing + authentication batch
+
+Added the public `/` landing page explaining permission drift, incomplete usage coverage and the human-review handoff model. Added `/login` and `/signup` with session-only email/password validation, synthetic-demo disclaimers, route-manifest entries and protected console routing. Added sign-out from the console top bar. No external identity provider or real account storage is used. Verification: typecheck PASS, 9 tests PASS, production build PASS, routes `/`, `/login`, `/signup` and `/manus-routes.json` returned HTTP 200, and desktop/mobile screenshots were inspected.
