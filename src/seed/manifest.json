@@ -1,0 +1,6 @@
+{
+  "rngSeed": 20261023,
+  "demoNow": "2026-10-23T00:00:00Z",
+  "mode": "static",
+  "datasets": ["users", "entitlements", "grants", "snapshots", "evidence", "findings", "activity", "roleChanges", "handoffs", "audit"]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { api } from './api'
+import { api } from './api/index'
 import { activity, auditSeed, connectors, counts, displayName, entitlements, evidence, findings, findingLabel, getEntitlement, getEvidence, getFinding, getUser, handoffs, peerGroups, roleChanges, settings, snapshots, users, usageRows, type Finding, type UsageState } from './data'
 import './styles.css'
 
