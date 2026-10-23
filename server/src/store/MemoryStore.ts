@@ -4,27 +4,7 @@ import type { DataStore } from './DataStore.js'
 import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../src/data.js'
 import { problems } from '../problem.js'
 import { logger } from '../logger.js'
-
-// Map frontend app names to contract app names
-const appMapping: Record<string, App> = {
-  'Google Workspace': 'google_workspace',
-  'Microsoft Entra': 'microsoft_entra',
-  'GitHub': 'github',
-}
-
-const reverseAppMapping: Record<App, string> = {
-  google_workspace: 'Google Workspace',
-  microsoft_entra: 'Microsoft Entra',
-  github: 'GitHub',
-}
-
-function mapApp(app: string): App {
-  return appMapping[app] || (app as App)
-}
-
-function reverseApp(app: App): string {
-  return reverseAppMapping[app]
-}
+import { mapApp, reverseApp } from '../mappers.js'
 
 // Generate minimal grants from findings
 function generateGrantsFromFindings(): Grant[] {
