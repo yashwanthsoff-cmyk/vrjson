@@ -164,7 +164,7 @@ export function createHttpApi() {
       request('POST', '/api/dev/reset'),
 
     // Delegate all other functions to staticApi (excluding the ones we override)
-    ...((({ getSnapshots, getEvidence, getDriftSummary, ...rest }) => rest)(staticApi)),
+    ...((({ getSnapshots, getEvidence, getDriftSummary, setDevFlags, resetDev, ...rest }) => rest)(staticApi)),
   }
 }
 
