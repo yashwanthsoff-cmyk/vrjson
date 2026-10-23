@@ -1,0 +1,32 @@
+{
+  "routes": [
+    {"path":"/","title":"Queue"},
+    {"path":"/queue","title":"Review queue"},
+    {"path":"/handoffs","title":"Handoffs"},
+    {"path":"/notifications","title":"Notifications"},
+    {"path":"/people","title":"People"},
+    {"path":"/people/:id","title":"Person detail"},
+    {"path":"/time-travel","title":"Time travel"},
+    {"path":"/usage","title":"Granted vs used"},
+    {"path":"/peers","title":"Peer excess"},
+    {"path":"/peers/frequency","title":"Peer frequency"},
+    {"path":"/peers/matrix","title":"Peer matrix"},
+    {"path":"/peers/groups","title":"Peer groups"},
+    {"path":"/peers/teams","title":"Custom teams"},
+    {"path":"/peers/exceptions","title":"Exceptions"},
+    {"path":"/movers","title":"Mover drift"},
+    {"path":"/movers/:userId","title":"Mover case"},
+    {"path":"/explanations","title":"Explanation lab"},
+    {"path":"/inventory","title":"Inventory"},
+    {"path":"/activity","title":"Activity"},
+    {"path":"/evidence","title":"Evidence"},
+    {"path":"/snapshots","title":"Snapshots"},
+    {"path":"/rules","title":"Rules"},
+    {"path":"/audit","title":"Audit"},
+    {"path":"/sources","title":"Sources"},
+    {"path":"/settings","title":"Settings"},
+    {"path":"/scenarios","title":"Scenarios"},
+    {"path":"/about","title":"About"},
+    {"path":"/help","title":"Help"}
+  ]
+}
