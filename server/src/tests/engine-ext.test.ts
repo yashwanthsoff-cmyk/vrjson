@@ -6,6 +6,7 @@ import { computeCoverage } from '../engine-ext/coverage.js'
 import { computeNextRun } from '../engine-ext/schedule.js'
 import { generateGrantEvidenceId, generateAsofEvidenceId, generateDiffEvidenceId } from '../engine-ext/evidence.js'
 import { computePrePost } from '../engine-ext/prepost.js'
+import { runReplayCheck } from '../engine-ext/replay.js'
 import { nextSimulatedTime, resetSimIndex } from '../engine-ext/simulated.js'
 import { consumeSampleGrant, resetSampleGrants } from '../engine-ext/sampleGrants.js'
 import type { Grant, Snapshot } from '@contract'
@@ -292,5 +293,51 @@ describe('engine-ext/sampleGrants', () => {
 
     const g4 = consumeSampleGrant('google_workspace', '2026-10-23T00:04:00Z', 'snap-new4')
     expect(g4).toBeNull()
+  })
+})
+
+describe('engine-ext/replay', () => {
+  it('passes replay check on valid snapshots', async () => {
+    const grants: Grant[] = [
+      { id: 'g1', userId: 'u1', entitlementId: 'e1', app: 'google_workspace', grantedAt: '2026-01-01T00:00:00Z', removedAt: null, source: 'test', firstSeenSnapshotId: 's1', lastSeenSnapshotId: null },
+    ]
+
+    const correctHash = await computeContentHash('google_workspace', '2026-01-01T00:00:00Z', grants)
+
+    const snapshots: Snapshot[] = [
+      { id: 's1', app: 'google_workspace', takenAt: '2026-01-01T00:00:00Z', complete: true, memberCount: 1, contentHash: correctHash },
+    ]
+
+    const result = await runReplayCheck(snapshots, grants, null) // Pass null to avoid auto-corruption
+    expect(result.checked).toBe(1)
+    expect(result.passed).toBe(1)
+    expect(result.failed).toBe(0)
+  })
+
+  it('skips incomplete snapshots', async () => {
+    const grants: Grant[] = []
+    const snapshots: Snapshot[] = [
+      { id: 's1', app: 'google_workspace', takenAt: '2026-03-12T00:00:00Z', complete: false, memberCount: 0, contentHash: 'hash' },
+    ]
+
+    const result = await runReplayCheck(snapshots, grants, null)
+    expect(result.checked).toBe(0)
+    expect(result.skippedIncomplete).toContain('s1')
+  })
+
+  it('detects corrupted snapshot', async () => {
+    const grants: Grant[] = [
+      { id: 'g1', userId: 'u1', entitlementId: 'e1', app: 'google_workspace', grantedAt: '2026-01-01T00:00:00Z', removedAt: null, source: 'test', firstSeenSnapshotId: 's1', lastSeenSnapshotId: null },
+    ]
+
+    const snapshots: Snapshot[] = [
+      { id: 's1', app: 'google_workspace', takenAt: '2026-01-01T00:00:00Z', complete: true, memberCount: 1, contentHash: 'corrupted-hash' },
+    ]
+
+    const result = await runReplayCheck(snapshots, grants, null)
+    expect(result.checked).toBe(1)
+    expect(result.passed).toBe(0)
+    expect(result.failed).toBe(1)
+    expect(result.failingSnapshotIds).toContain('s1')
   })
 })

@@ -137,6 +137,22 @@ export function createApp(store: DataStore) {
     return exportDiffCsvRoute(store, req, res)
   })
 
+  // Write routes
+  app.post('/api/replay-check', async (req, res) => {
+    const { replayCheckRoute } = await import('./routes/replay.js')
+    return replayCheckRoute(store, req, res)
+  })
+
+  app.post('/api/dev/flags', async (req, res) => {
+    const { devFlagsRoute } = await import('./routes/dev.js')
+    return devFlagsRoute(store, req, res)
+  })
+
+  app.post('/api/dev/reset', async (req, res) => {
+    const { devResetRoute } = await import('./routes/dev.js')
+    return devResetRoute(store, req, res)
+  })
+
   // 404 handler
   app.use((req, res) => {
     res.status(404).json({
