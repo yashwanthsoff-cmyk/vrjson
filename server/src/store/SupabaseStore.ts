@@ -1,5 +1,11 @@
 import type { App, Grant, Snapshot, Evidence, AuditEvent } from '@contract'
 import type { SyncSchedule, SyncRun, RoleChange, Connector, Reviewer, Paged } from '../types/extra.js'
+import type {
+  ActivityEvent,
+  EventMappingRule,
+  IngestRun,
+  UsageSummary,
+} from '../types/extra.f03.js'
 import type { DataStore } from './DataStore.js'
 import { createClient } from '@supabase/supabase-js'
 import { env } from '../env.js'
@@ -127,13 +133,11 @@ export class SupabaseStore implements DataStore {
   }
 
   async updateSnapshot(id: string, changes: Partial<Snapshot>): Promise<void> {
-    // Snapshots are append-only - this should never be called
-    throw problems.conflict('Snapshots are append-only: updates not allowed')
+    throw problems.forbidden('Snapshots are append-only: updates not allowed')
   }
 
   async deleteSnapshot(id: string): Promise<void> {
-    // Snapshots are append-only - this should never be called
-    throw problems.conflict('Snapshots are append-only: deletes not allowed')
+    throw problems.forbidden('Snapshots are append-only: deletes not allowed')
   }
 
   // Evidence
@@ -324,5 +328,231 @@ export class SupabaseStore implements DataStore {
     const { data, error } = await supabase.rpc('dev_reset_simulated')
     if (error) throw problems.internal(error.message)
     return { deleted: data as Record<string, number> }
+  }
+
+  // F-03 Activity Events
+  async listActivityEvents(
+    filters: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean } = {},
+    limit = 100,
+    offset = 0
+  ): Promise<Paged<ActivityEvent>> {
+    let query = supabase.from('activity_events').select('*', { count: 'exact' })
+
+    if (filters.userId) query = query.eq('user_id', filters.userId)
+    if (filters.app) query = query.eq('app', filters.app)
+    if (filters.actionClass) query = query.eq('action_class', filters.actionClass)
+    if (filters.from) query = query.gte('at', filters.from)
+    if (filters.to) query = query.lte('at', filters.to)
+    if (filters.isSimulated !== undefined) query = query.eq('is_simulated', filters.isSimulated)
+
+    const { data, error, count } = await query
+      .order('at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) throw problems.internal(error.message)
+
+    const items = (data || []).map((row: any) => ({
+      id: row.id,
+      userId: row.user_id,
+      app: row.app,
+      at: row.at,
+      action: row.action,
+      resource: row.resource,
+      actionClass: row.action_class,
+      isSimulated: row.is_simulated,
+      ingestRunId: row.ingest_run_id,
+      createdAt: row.created_at,
+    }))
+
+    return { items, total: count || 0, limit, offset }
+  }
+
+  async insertActivityEvents(events: ActivityEvent[]): Promise<number> {
+    if (events.length === 0) return 0
+    const records = events.map((ev) => ({
+      id: ev.id,
+      user_id: ev.userId,
+      app: ev.app,
+      at: ev.at,
+      action: ev.action,
+      resource: ev.resource,
+      action_class: ev.actionClass,
+      is_simulated: ev.isSimulated ?? false,
+      ingest_run_id: ev.ingestRunId ?? null,
+      created_at: ev.createdAt || ev.at,
+    }))
+
+    const { error } = await supabase.from('activity_events').insert(records)
+    if (error) throw problems.internal(error.message)
+    return events.length
+  }
+
+  async updateActivityEvent(id: string, changes: any): Promise<void> {
+    throw problems.forbidden('activity_events is append-only: UPDATE is forbidden')
+  }
+
+  async deleteActivityEvent(id: string): Promise<void> {
+    throw problems.forbidden('activity_events is append-only: DELETE is forbidden')
+  }
+
+  // F-03 Mapping Rules
+  async listMappingRules(app?: App): Promise<EventMappingRule[]> {
+    let query = supabase.from('event_mapping_rules').select('*')
+    if (app) query = query.eq('app', app)
+    const { data, error } = await query
+    if (error) throw problems.internal(error.message)
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      app: row.app,
+      actionPattern: row.action_pattern,
+      entitlementId: row.entitlement_id,
+      note: row.note,
+    }))
+  }
+
+  async insertMappingRule(rule: EventMappingRule): Promise<EventMappingRule> {
+    const record = {
+      id: rule.id,
+      app: rule.app,
+      action_pattern: rule.actionPattern,
+      entitlement_id: rule.entitlementId,
+      note: rule.note,
+    }
+    const { error } = await supabase.from('event_mapping_rules').insert(record)
+    if (error) throw problems.internal(error.message)
+    return rule
+  }
+
+  async updateMappingRule(
+    id: string,
+    updates: Partial<EventMappingRule>
+  ): Promise<EventMappingRule | null> {
+    const updateRecord: any = {}
+    if (updates.actionPattern) updateRecord.action_pattern = updates.actionPattern
+    if (updates.entitlementId) updateRecord.entitlement_id = updates.entitlementId
+    if (updates.note !== undefined) updateRecord.note = updates.note
+
+    const { data, error } = await supabase
+      .from('event_mapping_rules')
+      .update(updateRecord)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw problems.internal(error.message)
+    }
+
+    return {
+      id: data.id,
+      app: data.app,
+      actionPattern: data.action_pattern,
+      entitlementId: data.entitlement_id,
+      note: data.note,
+    }
+  }
+
+  async deleteMappingRule(id: string): Promise<boolean> {
+    const { error } = await supabase.from('event_mapping_rules').delete().eq('id', id)
+    if (error) throw problems.internal(error.message)
+    return true
+  }
+
+  // F-03 Ingest Runs
+  async listIngestRuns(app?: App): Promise<IngestRun[]> {
+    let query = supabase.from('ingest_runs').select('*').order('at', { ascending: false })
+    if (app) query = query.eq('app', app)
+    const { data, error } = await query
+    if (error) throw problems.internal(error.message)
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      app: row.app,
+      at: row.at,
+      windowFrom: row.window_from,
+      windowTo: row.window_to,
+      eventsPulled: row.events_pulled,
+      unmapped: row.unmapped,
+      status: row.status,
+      ingIndex: row.ing_index,
+      isSimulated: row.is_simulated,
+      createdAt: row.created_at,
+    }))
+  }
+
+  async insertIngestRun(run: IngestRun): Promise<IngestRun> {
+    const record = {
+      id: run.id,
+      app: run.app,
+      at: run.at,
+      window_from: run.windowFrom,
+      window_to: run.windowTo,
+      events_pulled: run.eventsPulled,
+      unmapped: run.unmapped,
+      status: run.status,
+      ing_index: run.ingIndex ?? null,
+      is_simulated: run.isSimulated ?? false,
+      created_at: run.createdAt || run.at,
+    }
+    const { error } = await supabase.from('ingest_runs').insert(record)
+    if (error) throw problems.internal(error.message)
+    return run
+  }
+
+  async updateIngestRun(id: string, changes: any): Promise<void> {
+    throw problems.forbidden('ingest_runs is append-only: UPDATE is forbidden')
+  }
+
+  async deleteIngestRun(id: string): Promise<void> {
+    throw problems.forbidden('ingest_runs is append-only: DELETE is forbidden')
+  }
+
+  // F-03 Usage Summaries
+  async getUsageSummary(scopeKey: string): Promise<UsageSummary | null> {
+    const { data, error } = await supabase
+      .from('usage_summaries')
+      .select('*')
+      .eq('scope_key', scopeKey)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw problems.internal(error.message)
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      app: data.app,
+      source: data.source,
+      fallbackUsed: data.source === 'template',
+      label: data.source === 'model'
+        ? 'Wording generated by gpt-oss via Groq, validated against evidence. Facts are computed by transparent rules.'
+        : 'Fixed template wording.',
+      sentences: data.wording?.sentences || [],
+      evidence: [],
+      validation: data.validation || { claims: 0, linked: 0, passed: true, failures: [] },
+      cached: true,
+      createdAt: data.created_at,
+    }
+  }
+
+  async saveUsageSummary(scopeKey: string, summary: UsageSummary): Promise<void> {
+    const record = {
+      id: summary.id,
+      scope_key: scopeKey,
+      user_id: summary.userId,
+      app: summary.app,
+      source: summary.source,
+      wording: { sentences: summary.sentences },
+      validation: summary.validation,
+      is_simulated: false,
+      created_at: summary.createdAt,
+    }
+
+    const { error } = await supabase.from('usage_summaries').upsert(record, { onConflict: 'scope_key' })
+    if (error) throw problems.internal(error.message)
   }
 }

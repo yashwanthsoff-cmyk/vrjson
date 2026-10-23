@@ -1,10 +1,26 @@
 import type { App, Grant, Snapshot, Evidence, AuditEvent } from '@contract'
 import type { SyncSchedule, SyncRun, RoleChange, Connector, Reviewer, Paged } from '../types/extra.js'
+import type {
+  ActivityEvent,
+  EventMappingRule,
+  IngestRun,
+  UsageSummary,
+} from '../types/extra.f03.js'
 import type { DataStore } from './DataStore.js'
-import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../../src/data.js'
+import {
+  users,
+  entitlements,
+  snapshots as frontendSnapshots,
+  roleChanges as frontendRoleChanges,
+  findings,
+  evidence as frontendEvidence,
+  activity as frontendActivity,
+} from '../../../src/data.js'
 import { problems } from '../problem.js'
 import { logger } from '../logger.js'
 import { mapApp, reverseApp } from '../mappers.js'
+import { resetIngestSimulation } from '../engine-ext/ingestSim.js'
+import { clearAllSessionOverlays } from '../engine-ext/overlay.js'
 
 // Generate minimal grants from findings
 function generateGrantsFromFindings(): Grant[] {
@@ -23,7 +39,7 @@ function generateGrantsFromFindings(): Grant[] {
         userId: finding.userId,
         entitlementId: finding.entitlementId,
         app: mapApp(entitlement.app),
-        grantedAt: '2025-01-01T00:00:00Z', // Default to a past date
+        grantedAt: '2025-01-01T00:00:00Z',
         removedAt: null,
         source: 'directory_sync',
         firstSeenSnapshotId: 'snap-initial',
@@ -38,18 +54,16 @@ function generateGrantsFromFindings(): Grant[] {
 // Generate snapshots with computed hashes
 async function generateSnapshots(): Promise<Snapshot[]> {
   const grants = generateGrantsFromFindings()
-  const snapshotMap = new Map<string, Snapshot>()
 
+  const result: Snapshot[] = []
   for (const snap of frontendSnapshots) {
     const app = mapApp(snap.app)
     const takenAt = snap.date + 'T00:00:00Z'
 
-    // Get grants active at this snapshot time
     const activeGrants = grants.filter(
       (g) => g.app === app && g.grantedAt <= takenAt && (g.removedAt === null || g.removedAt > takenAt)
     )
 
-    // Compute content hash
     const grantStrings = activeGrants
       .map((g) => `${g.userId}|${g.entitlementId}`)
       .sort()
@@ -59,17 +73,17 @@ async function generateSnapshots(): Promise<Snapshot[]> {
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const hashHex = 'sha256:' + hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 
-    snapshotMap.set(snap.id, {
+    result.push({
       id: snap.id,
       app,
       takenAt,
       complete: snap.complete,
       memberCount: activeGrants.length,
-      contentHash: hashHex,
+      contentHash: snap.complete ? hashHex : 'skipped · incomplete',
     })
   }
 
-  return Array.from(snapshotMap.values())
+  return result
 }
 
 export class MemoryStore implements DataStore {
@@ -91,7 +105,13 @@ export class MemoryStore implements DataStore {
     name: e.name,
     kind: e.kind,
     privilegeLevel: e.level,
-    dataSensitivity: e.sensitivity === 'admin' ? 'pii_financial' : e.sensitivity === 'high' ? 'confidential' : e.sensitivity === 'medium' ? 'internal' : 'public',
+    dataSensitivity: (e.sensitivity === 'admin'
+      ? 'pii_financial'
+      : e.sensitivity === 'high'
+      ? 'confidential'
+      : e.sensitivity === 'medium'
+      ? 'internal'
+      : 'public') as 'public' | 'internal' | 'confidential' | 'pii_financial',
     categories: e.categories,
     seasonal: e.seasonal,
     downgradeToId: e.downgradeTo,
@@ -110,6 +130,12 @@ export class MemoryStore implements DataStore {
   private devFlags = new Map<string, unknown>()
   private driftSummaries = new Map<string, any>()
 
+  // F-03 State
+  private activityEvents: ActivityEvent[] = []
+  private mappingRules: EventMappingRule[] = []
+  private ingestRuns: IngestRun[] = []
+  private usageSummaries = new Map<string, UsageSummary>()
+
   constructor() {
     this.initialize()
   }
@@ -118,7 +144,6 @@ export class MemoryStore implements DataStore {
     this.grants = generateGrantsFromFindings()
     this.snapshots = await generateSnapshots()
 
-    // Map evidence
     this.evidence = frontendEvidence.map((e) => ({
       id: e.id,
       type: e.type,
@@ -128,7 +153,6 @@ export class MemoryStore implements DataStore {
       derived: e.derived,
     }))
 
-    // Map role changes
     this.roleChanges = frontendRoleChanges.map((rc) => ({
       id: rc.id,
       userId: rc.userId,
@@ -143,21 +167,18 @@ export class MemoryStore implements DataStore {
       status: rc.status === 'In grace' ? 'in_grace' : 'past_grace',
     }))
 
-    // Initialize connectors
     this.connectors = [
       { id: 'conn-google', app: 'google_workspace', status: 'active', lastSyncAt: '2026-10-23T00:00:00Z', dataAsOf: '2026-10-23', coverageDays: 180, consentedBy: 'rev-asha', consentedAt: '2026-10-01T00:00:00Z', revokedAt: null },
       { id: 'conn-entra', app: 'microsoft_entra', status: 'active', lastSyncAt: '2026-10-23T00:00:00Z', dataAsOf: '2026-10-23', coverageDays: 30, consentedBy: 'rev-asha', consentedAt: '2026-10-01T00:00:00Z', revokedAt: null },
       { id: 'conn-github', app: 'github', status: 'active', lastSyncAt: '2026-10-23T00:00:00Z', dataAsOf: '2026-10-23', coverageDays: 90, consentedBy: 'rev-asha', consentedAt: '2026-10-01T00:00:00Z', revokedAt: null },
     ]
 
-    // Initialize reviewers
     this.reviewers = [
       { id: 'rev-asha', displayName: 'Asha Rao', pseudonym: 'Person 001', department: 'Support', isActive: true },
       { id: 'rev-vikram', displayName: 'Vikram Shah', pseudonym: 'Person 002', department: 'Finance', isActive: true },
       { id: 'rev-nisha', displayName: 'Nisha Verma', pseudonym: 'Person 003', department: 'Data Analytics', isActive: true },
     ]
 
-    // Initialize sync schedules
     this.syncSchedules.set('google_workspace', {
       app: 'google_workspace',
       frequency: 'weekly',
@@ -180,248 +201,255 @@ export class MemoryStore implements DataStore {
       app: 'github',
       frequency: 'weekly',
       enabled: true,
-      lastRunAt: '2026-10-16T00:00:00Z',
-      nextRunAt: '2026-10-23T00:00:00Z',
+      lastRunAt: '2026-10-22T00:00:00Z',
+      nextRunAt: '2026-10-29T00:00:00Z',
       actorId: 'rev-vikram',
       updatedAt: '2026-10-01T00:00:00Z',
     })
+
+    // Initialize F-03 Seed Activity Events
+    this.activityEvents = frontendActivity.map((a) => ({
+      id: a.id,
+      userId: a.userId,
+      app: mapApp(a.app),
+      at: a.at.includes('T') ? a.at : a.at + 'T00:00:00Z',
+      action: a.action,
+      resource: a.resource,
+      actionClass: a.actionClass,
+      isSimulated: false,
+      ingestRunId: null,
+      createdAt: a.at.includes('T') ? a.at : a.at + 'T00:00:00Z',
+    }))
+
+    // Initialize F-03 Seed Mapping Rules
+    this.mappingRules = [
+      { id: 'rule-gw-1', app: 'google_workspace', actionPattern: 'drive.admin.*', entitlementId: 'e-drive-admin', note: 'Maps administrative drive actions' },
+      { id: 'rule-gw-2', app: 'google_workspace', actionPattern: 'drive.write*', entitlementId: 'e-drive-write', note: 'Maps write drive actions' },
+      { id: 'rule-gw-3', app: 'google_workspace', actionPattern: 'drive.read', entitlementId: 'e-support-read', note: 'Maps read drive actions to support read' },
+      { id: 'rule-gh-1', app: 'github', actionPattern: 'repo.push*', entitlementId: 'e-github-write', note: 'Maps repository push events' },
+      { id: 'rule-gh-2', app: 'github', actionPattern: 'repo.branch.*', entitlementId: 'e-github-write', note: 'Maps repository branch operations' },
+      { id: 'rule-gh-3', app: 'github', actionPattern: 'repo.read*', entitlementId: 'e-github-read', note: 'Maps repository read events' },
+      { id: 'rule-gh-4', app: 'github', actionPattern: 'release.artifact.export', entitlementId: 'e-repo-export', note: 'Maps release artifact export events' },
+      { id: 'rule-me-1', app: 'microsoft_entra', actionPattern: 'directory.role.*', entitlementId: 'e-entra-admin', note: 'Maps directory role assignment' },
+      { id: 'rule-me-2', app: 'microsoft_entra', actionPattern: 'directory.user.*', entitlementId: 'e-entra-admin', note: 'Maps directory user read' },
+      { id: 'rule-me-3', app: 'microsoft_entra', actionPattern: 'billing.view', entitlementId: 'e-entra-app', note: 'Maps billing app read' },
+    ]
+
+    // Initialize F-03 Seed Ingest Runs
+    this.ingestRuns = [
+      { id: 'ingest-gw-seed', app: 'google_workspace', at: '2026-10-23T00:00:00Z', windowFrom: '2026-04-26T00:00:00Z', windowTo: '2026-10-23T00:00:00Z', eventsPulled: 3, unmapped: 1, status: 'completed', ingIndex: null, isSimulated: false, createdAt: '2026-10-23T00:00:00Z' },
+      { id: 'ingest-gh-seed', app: 'github', at: '2026-10-23T00:00:00Z', windowFrom: '2026-07-25T00:00:00Z', windowTo: '2026-10-23T00:00:00Z', eventsPulled: 1, unmapped: 0, status: 'completed', ingIndex: null, isSimulated: false, createdAt: '2026-10-23T00:00:00Z' },
+      { id: 'ingest-me-seed', app: 'microsoft_entra', at: '2026-10-23T00:00:00Z', windowFrom: '2026-09-23T00:00:00Z', windowTo: '2026-10-23T00:00:00Z', eventsPulled: 1, unmapped: 0, status: 'completed', ingIndex: null, isSimulated: false, createdAt: '2026-10-23T00:00:00Z' },
+    ]
 
     logger.info('MemoryStore initialized with seed data')
   }
 
   // Users
-  async listUsers(limit = 100, offset = 0): Promise<Paged<any>> {
+  async listUsers(limit = 100, offset = 0) {
     const items = this.users.slice(offset, offset + limit)
     return { items, total: this.users.length, limit, offset }
   }
 
-  async getUserById(id: string): Promise<any> {
+  async getUserById(id: string) {
     return this.users.find((u) => u.id === id) || null
   }
 
   // Entitlements
-  async listEntitlements(limit = 100, offset = 0): Promise<Paged<any>> {
+  async listEntitlements(limit = 100, offset = 0) {
     const items = this.entitlements.slice(offset, offset + limit)
     return { items, total: this.entitlements.length, limit, offset }
   }
 
-  async getEntitlementById(id: string): Promise<any> {
+  async getEntitlementById(id: string) {
     return this.entitlements.find((e) => e.id === id) || null
   }
 
   // Grants
-  async listGrants(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Grant>> {
-    let filtered = [...this.grants]
+  async listGrants(filters: any = {}, limit = 100, offset = 0) {
+    let result = [...this.grants]
+    if (filters.userId) result = result.filter((g) => g.userId === filters.userId)
+    if (filters.entitlementId) result = result.filter((g) => g.entitlementId === filters.entitlementId)
+    if (filters.app) result = result.filter((g) => g.app === filters.app)
 
-    if (filters.userId) filtered = filtered.filter((g) => g.userId === filters.userId)
-    if (filters.app) filtered = filtered.filter((g) => g.app === filters.app)
-    if (filters.entitlementId) filtered = filtered.filter((g) => g.entitlementId === filters.entitlementId)
-    if (filters.source) filtered = filtered.filter((g) => g.source === filters.source)
-    if (filters.activeOn) {
-      const date = filters.activeOn
-      filtered = filtered.filter((g) => g.grantedAt <= date && (g.removedAt === null || g.removedAt > date))
-    }
-    if (filters.removed !== undefined) {
-      if (filters.removed) filtered = filtered.filter((g) => g.removedAt !== null)
-      else filtered = filtered.filter((g) => g.removedAt === null)
-    }
-
-    const items = filtered.slice(offset, offset + limit)
-    return { items, total: filtered.length, limit, offset }
+    const items = result.slice(offset, offset + limit)
+    return { items, total: result.length, limit, offset }
   }
 
-  async getGrantById(id: string): Promise<Grant | null> {
+  async getGrantById(id: string) {
     return this.grants.find((g) => g.id === id) || null
   }
 
   async insertGrant(grant: Omit<Grant, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Grant> {
     const newGrant: Grant = {
-      id: grant.id || `grant-${String(this.grants.length + 1).padStart(4, '0')}`,
       ...grant,
-    }
-    ;(newGrant as any).isSimulated = grant.isSimulated || false
-    ;(newGrant as any).createdAt = grant.createdAt || new Date().toISOString()
+      id: grant.id || `grant-${String(this.grants.length + 1).padStart(4, '0')}`,
+      createdAt: grant.createdAt || new Date().toISOString(),
+    } as any
+
     this.grants.push(newGrant)
     return newGrant
   }
 
-  async updateGrantRemovedAt(id: string, removedAt: string | null, lastSeenSnapshotId: string | null): Promise<void> {
+  async updateGrantRemovedAt(id: string, removedAt: string | null, lastSeenSnapshotId: string | null) {
     const grant = this.grants.find((g) => g.id === id)
-    if (!grant) throw problems.notFound('Grant not found')
-
-    // Append-only check: removedAt can only be set once
-    if (grant.removedAt !== null && removedAt !== null && grant.removedAt !== removedAt) {
-      throw problems.conflict('Grant already removed; add a new record instead')
+    if (grant) {
+      grant.removedAt = removedAt
+      grant.lastSeenSnapshotId = lastSeenSnapshotId
     }
-
-    grant.removedAt = removedAt
-    grant.lastSeenSnapshotId = lastSeenSnapshotId
   }
 
   // Snapshots
-  async listSnapshots(filters: any = {}, limit = 100, offset = 0): Promise<Paged<Snapshot>> {
-    let filtered = [...this.snapshots]
+  async listSnapshots(filters: any = {}, limit = 100, offset = 0) {
+    let result = [...this.snapshots]
+    if (filters.app) result = result.filter((s) => s.app === filters.app)
 
-    if (filters.app) filtered = filtered.filter((s) => s.app === filters.app)
-    if (filters.from) filtered = filtered.filter((s) => s.takenAt >= filters.from)
-    if (filters.to) filtered = filtered.filter((s) => s.takenAt <= filters.to)
-    if (filters.complete !== undefined) filtered = filtered.filter((s) => s.complete === filters.complete)
-
-    const items = filtered.slice(offset, offset + limit)
-    return { items, total: filtered.length, limit, offset }
+    const items = result.slice(offset, offset + limit)
+    return { items, total: result.length, limit, offset }
   }
 
-  async getSnapshotById(id: string): Promise<Snapshot | null> {
+  async getSnapshotById(id: string) {
     return this.snapshots.find((s) => s.id === id) || null
   }
 
   async insertSnapshot(snapshot: Omit<Snapshot, 'id'> & { id?: string; isSimulated?: boolean; createdAt?: string }): Promise<Snapshot> {
     const newSnapshot: Snapshot = {
-      id: snapshot.id || `snap-${Date.now()}`,
       ...snapshot,
-    }
-    ;(newSnapshot as any).isSimulated = snapshot.isSimulated || false
-    ;(newSnapshot as any).createdAt = snapshot.createdAt || new Date().toISOString()
+      id: snapshot.id || `snap-${Date.now()}`,
+      createdAt: snapshot.createdAt || new Date().toISOString(),
+    } as any
+
     this.snapshots.push(newSnapshot)
     return newSnapshot
   }
 
-  // Append-only enforcement for snapshots - no updates or deletes
-  async updateSnapshot(id: string, changes: Partial<Snapshot>): Promise<void> {
-    throw problems.conflict('Snapshots are append-only: updates not allowed')
+  async updateSnapshot(id: string, changes: Partial<Snapshot>) {
+    throw problems.forbidden('Snapshots are append-only: UPDATE is forbidden')
   }
 
-  async deleteSnapshot(id: string): Promise<void> {
-    // Allow deletion if simulated and dev reset is active
-    const snapshot = this.snapshots.find((s) => s.id === id)
-    if (snapshot && (snapshot as any).isSimulated) {
-      this.snapshots = this.snapshots.filter((s) => s.id !== id)
-      return
-    }
-    throw problems.conflict('Snapshots are append-only: deletes not allowed')
+  async deleteSnapshot(id: string) {
+    throw problems.forbidden('Snapshots are append-only: DELETE is forbidden')
   }
 
   // Evidence
-  async getEvidenceById(id: string): Promise<Evidence | null> {
+  async getEvidenceById(id: string) {
     return this.evidence.find((e) => e.id === id) || null
   }
 
-  async listEvidence(evidenceIds: string[]): Promise<Evidence[]> {
+  async listEvidence(evidenceIds: string[]) {
     return this.evidence.filter((e) => evidenceIds.includes(e.id))
   }
 
   async insertEvidence(evidence: Omit<Evidence, 'id'> & { id?: string }): Promise<Evidence> {
     const newEvidence: Evidence = {
-      id: evidence.id || `ev-${Date.now()}`,
       ...evidence,
+      id: evidence.id || `ev-${Date.now()}`,
     }
     this.evidence.push(newEvidence)
     return newEvidence
   }
 
   // Sync
-  async listSyncRuns(app?: App): Promise<SyncRun[]> {
-    if (app) return this.syncRuns.filter((r) => r.app === app)
-    return [...this.syncRuns]
+  async listSyncRuns(app?: App) {
+    let result = [...this.syncRuns]
+    if (app) result = result.filter((r) => r.app === app)
+    return result
   }
 
   async insertSyncRun(run: Omit<SyncRun, 'id'> & { id?: string }): Promise<SyncRun> {
     const newRun: SyncRun = {
-      id: run.id || `sync-${Date.now()}`,
       ...run,
+      id: run.id || `sync-${Date.now()}`,
     }
     this.syncRuns.push(newRun)
     return newRun
   }
 
-  async getSyncSchedule(app: App): Promise<SyncSchedule | null> {
+  async getSyncSchedule(app: App) {
     return this.syncSchedules.get(app) || null
   }
 
-  async upsertSyncSchedule(schedule: SyncSchedule): Promise<SyncSchedule> {
+  async upsertSyncSchedule(schedule: SyncSchedule) {
     this.syncSchedules.set(schedule.app, schedule)
     return schedule
   }
 
   // Role Changes
-  async listRoleChanges(userId?: string): Promise<RoleChange[]> {
-    if (userId) return this.roleChanges.filter((rc) => rc.userId === userId)
-    return [...this.roleChanges]
+  async listRoleChanges(userId?: string) {
+    let result = [...this.roleChanges]
+    if (userId) result = result.filter((rc) => rc.userId === userId)
+    return result
   }
 
   async insertRoleChange(change: Omit<RoleChange, 'id'> & { id?: string }): Promise<RoleChange> {
     const newChange: RoleChange = {
-      id: change.id || `rc-${Date.now()}`,
       ...change,
+      id: change.id || `rc-${Date.now()}`,
     }
     this.roleChanges.push(newChange)
     return newChange
   }
 
   // Audit
-  async listAudit(filters: any = {}, limit = 100, offset = 0): Promise<Paged<AuditEvent>> {
-    let filtered = [...this.auditEvents]
+  async listAudit(filters: any = {}, limit = 100, offset = 0) {
+    let result = [...this.auditEvents]
+    if (filters.action) result = result.filter((a) => a.action === filters.action)
+    if (filters.actorId) result = result.filter((a) => a.actorId === filters.actorId)
 
-    if (filters.actorId) filtered = filtered.filter((a) => a.actorId === filters.actorId)
-    if (filters.action) filtered = filtered.filter((a) => a.action === filters.action)
-    if (filters.targetType) filtered = filtered.filter((a) => a.targetType === filters.targetType)
-    if (filters.from) filtered = filtered.filter((a) => a.at >= filters.from)
-    if (filters.to) filtered = filtered.filter((a) => a.at <= filters.to)
-    if (filters.q) {
-      const q = filters.q.toLowerCase()
-      filtered = filtered.filter((a) => a.detail.toLowerCase().includes(q) || a.targetId.toLowerCase().includes(q))
-    }
-
-    const items = filtered.slice(offset, offset + limit)
-    return { items, total: filtered.length, limit, offset }
+    const items = result.slice(offset, offset + limit)
+    return { items, total: result.length, limit, offset }
   }
 
   async insertAudit(event: Omit<AuditEvent, 'id'> & { id?: string; prevHash?: string; hash?: string }): Promise<AuditEvent> {
+    const prevEvent = this.auditEvents[this.auditEvents.length - 1]
+    const prevHash = prevEvent?.hash || '0'.repeat(64)
+
+    const content = `${event.at}|${event.actorId}|${event.action}|${event.targetType}|${event.targetId}|${event.detail}|${prevHash}`
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(content))
+    const hash = 'sha256:' + Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('')
+
     const newEvent: AuditEvent = {
-      id: event.id || `au-${Date.now()}`,
-      at: event.at,
-      actorId: event.actorId,
-      action: event.action,
-      targetType: event.targetType,
-      targetId: event.targetId,
-      detail: event.detail,
-      prevHash: event.prevHash || '',
-      hash: event.hash || '',
+      ...event,
+      id: event.id || `au-${this.auditEvents.length + 1}`,
+      prevHash,
+      hash,
     }
+
     this.auditEvents.push(newEvent)
     return newEvent
   }
 
   // Connectors
-  async listConnectors(): Promise<Connector[]> {
+  async listConnectors() {
     return [...this.connectors]
   }
 
-  async getConnector(app: App): Promise<Connector | null> {
+  async getConnector(app: App) {
     return this.connectors.find((c) => c.app === app) || null
   }
 
-  async updateConnector(connector: Partial<Connector> & { app: App }): Promise<void> {
-    const index = this.connectors.findIndex((c) => c.app === connector.app)
-    if (index === -1) throw problems.notFound('Connector not found')
-    this.connectors[index] = { ...this.connectors[index], ...connector }
+  async updateConnector(connector: Partial<Connector> & { app: App }) {
+    const existing = this.connectors.find((c) => c.app === connector.app)
+    if (existing) {
+      Object.assign(existing, connector)
+    }
   }
 
   // Reviewers
-  async listReviewers(): Promise<Reviewer[]> {
+  async listReviewers() {
     return [...this.reviewers]
   }
 
-  async getReviewerById(id: string): Promise<Reviewer | null> {
+  async getReviewerById(id: string) {
     return this.reviewers.find((r) => r.id === id) || null
   }
 
   // Dev flags
-  async getDevFlag(key: string): Promise<unknown | null> {
-    return this.devFlags.get(key) || null
+  async getDevFlag(key: string) {
+    return this.devFlags.get(key) ?? null
   }
 
-  async setDevFlag(key: string, value: unknown): Promise<void> {
+  async setDevFlag(key: string, value: unknown) {
     this.devFlags.set(key, value)
   }
 
@@ -452,7 +480,9 @@ export class MemoryStore implements DataStore {
       snapshots: 0,
       syncRuns: 0,
       auditEvents: 0,
-      manualFindings: 0,
+      activityEvents: 0,
+      ingestRuns: 0,
+      usageSummaries: 0,
     }
 
     // Remove simulated entries
@@ -472,9 +502,118 @@ export class MemoryStore implements DataStore {
     this.auditEvents = this.auditEvents.filter((a) => !(a as any).isSimulated)
     deleted.auditEvents = initialAudit - this.auditEvents.length
 
-    // Restore dev flags
+    // F-03 simulated cleanup
+    const initialActivity = this.activityEvents.length
+    this.activityEvents = this.activityEvents.filter((a) => !a.isSimulated)
+    deleted.activityEvents = initialActivity - this.activityEvents.length
+
+    const initialIngest = this.ingestRuns.length
+    this.ingestRuns = this.ingestRuns.filter((r) => !r.isSimulated)
+    deleted.ingestRuns = initialIngest - this.ingestRuns.length
+
+    deleted.usageSummaries = this.usageSummaries.size
+    this.usageSummaries.clear()
+
+    // Restore dev flags, session overlays, ingest simulation state
     this.devFlags.clear()
+    clearAllSessionOverlays()
+    resetIngestSimulation()
 
     return { deleted }
+  }
+
+  // F-03 Activity Events
+  async listActivityEvents(
+    filters: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean } = {},
+    limit = 100,
+    offset = 0
+  ): Promise<Paged<ActivityEvent>> {
+    let result = [...this.activityEvents]
+
+    if (filters.userId) result = result.filter((a) => a.userId === filters.userId)
+    if (filters.app) result = result.filter((a) => a.app === filters.app)
+    if (filters.actionClass) result = result.filter((a) => a.actionClass === filters.actionClass)
+    if (filters.from) result = result.filter((a) => a.at >= filters.from!)
+    if (filters.to) result = result.filter((a) => a.at <= filters.to!)
+    if (filters.isSimulated !== undefined) result = result.filter((a) => Boolean(a.isSimulated) === filters.isSimulated)
+
+    result.sort((a, b) => b.at.localeCompare(a.at))
+
+    const items = result.slice(offset, offset + limit)
+    return { items, total: result.length, limit, offset }
+  }
+
+  async insertActivityEvents(events: ActivityEvent[]): Promise<number> {
+    for (const ev of events) {
+      this.activityEvents.push({
+        ...ev,
+        createdAt: ev.createdAt || ev.at,
+      })
+    }
+    return events.length
+  }
+
+  async updateActivityEvent(id: string, changes: any): Promise<void> {
+    throw problems.forbidden('activity_events is append-only: UPDATE is forbidden')
+  }
+
+  async deleteActivityEvent(id: string): Promise<void> {
+    throw problems.forbidden('activity_events is append-only: DELETE is forbidden')
+  }
+
+  // F-03 Mapping Rules
+  async listMappingRules(app?: App): Promise<EventMappingRule[]> {
+    let result = [...this.mappingRules]
+    if (app) result = result.filter((r) => r.app === app)
+    return result
+  }
+
+  async insertMappingRule(rule: EventMappingRule): Promise<EventMappingRule> {
+    this.mappingRules.push(rule)
+    return rule
+  }
+
+  async updateMappingRule(id: string, updates: Partial<EventMappingRule>): Promise<EventMappingRule | null> {
+    const existing = this.mappingRules.find((r) => r.id === id)
+    if (!existing) return null
+    Object.assign(existing, updates)
+    return existing
+  }
+
+  async deleteMappingRule(id: string): Promise<boolean> {
+    const idx = this.mappingRules.findIndex((r) => r.id === id)
+    if (idx === -1) return false
+    this.mappingRules.splice(idx, 1)
+    return true
+  }
+
+  // F-03 Ingest Runs
+  async listIngestRuns(app?: App): Promise<IngestRun[]> {
+    let result = [...this.ingestRuns]
+    if (app) result = result.filter((r) => r.app === app)
+    result.sort((a, b) => b.at.localeCompare(a.at))
+    return result
+  }
+
+  async insertIngestRun(run: IngestRun): Promise<IngestRun> {
+    this.ingestRuns.push(run)
+    return run
+  }
+
+  async updateIngestRun(id: string, changes: any): Promise<void> {
+    throw problems.forbidden('ingest_runs is append-only: UPDATE is forbidden')
+  }
+
+  async deleteIngestRun(id: string): Promise<void> {
+    throw problems.forbidden('ingest_runs is append-only: DELETE is forbidden')
+  }
+
+  // F-03 Usage Summaries
+  async getUsageSummary(scopeKey: string): Promise<UsageSummary | null> {
+    return this.usageSummaries.get(scopeKey) || null
+  }
+
+  async saveUsageSummary(scopeKey: string, summary: UsageSummary): Promise<void> {
+    this.usageSummaries.set(scopeKey, summary)
   }
 }

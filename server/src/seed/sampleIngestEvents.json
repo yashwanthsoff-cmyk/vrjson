@@ -1,0 +1,128 @@
+[
+  {
+    "app": "google_workspace",
+    "userId": "u-karthik",
+    "action": "drive.read",
+    "resource": "finance/q3-report",
+    "actionClass": "read"
+  },
+  {
+    "app": "google_workspace",
+    "userId": "u-divya",
+    "action": "drive.write",
+    "resource": "marketing/campaign-2026",
+    "actionClass": "write"
+  },
+  {
+    "app": "google_workspace",
+    "userId": "u-meera",
+    "action": "drive.admin.update_perms",
+    "resource": "support/shared-drive",
+    "actionClass": "admin"
+  },
+  {
+    "app": "google_workspace",
+    "userId": "u-tara",
+    "action": "export.csv",
+    "resource": "quarter-close/final",
+    "actionClass": "export"
+  },
+  {
+    "app": "google_workspace",
+    "userId": "u-karthik",
+    "action": "calendar.view",
+    "resource": "meetings/q3-planning",
+    "actionClass": "read"
+  },
+  {
+    "app": "google_workspace",
+    "userId": "u-divya",
+    "action": "chat.message.send",
+    "resource": "channels/general",
+    "actionClass": "write"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-rohan",
+    "action": "billing.view",
+    "resource": "billing-app/invoices",
+    "actionClass": "read"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-karthik",
+    "action": "directory.user.read",
+    "resource": "users/directory",
+    "actionClass": "read"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-sana",
+    "action": "directory.role.assign",
+    "resource": "roles/admin",
+    "actionClass": "admin"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-aarav",
+    "action": "billing.report.download",
+    "resource": "billing-app/tax-report",
+    "actionClass": "export"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-meera",
+    "action": "security.mfa.verify",
+    "resource": "auth/mfa",
+    "actionClass": "read"
+  },
+  {
+    "app": "microsoft_entra",
+    "userId": "u-rohan",
+    "action": "audit.logs.stream",
+    "resource": "telemetry/stream",
+    "actionClass": "read"
+  },
+  {
+    "app": "github",
+    "userId": "u-sana",
+    "action": "repo.push",
+    "resource": "acme/platform",
+    "actionClass": "write"
+  },
+  {
+    "app": "github",
+    "userId": "u-aarav",
+    "action": "repo.read",
+    "resource": "acme/platform",
+    "actionClass": "read"
+  },
+  {
+    "app": "github",
+    "userId": "u-sana",
+    "action": "repo.branch.create",
+    "resource": "acme/platform",
+    "actionClass": "write"
+  },
+  {
+    "app": "github",
+    "userId": "u-aarav",
+    "action": "release.artifact.export",
+    "resource": "acme/releases",
+    "actionClass": "export"
+  },
+  {
+    "app": "github",
+    "userId": "u-meera",
+    "action": "issue.comment.create",
+    "resource": "acme/issues",
+    "actionClass": "write"
+  },
+  {
+    "app": "github",
+    "userId": "u-rohan",
+    "action": "gist.star",
+    "resource": "gists/analytics-snippet",
+    "actionClass": "read"
+  }
+]

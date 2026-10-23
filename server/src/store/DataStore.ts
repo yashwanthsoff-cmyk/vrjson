@@ -1,5 +1,11 @@
 import type { App, Grant, Snapshot, Evidence, AuditEvent } from '@contract'
 import type { SyncSchedule, SyncRun, RoleChange, Connector, Reviewer, Paged } from '../types/extra.js'
+import type {
+  ActivityEvent,
+  EventMappingRule,
+  IngestRun,
+  UsageSummary,
+} from '../types/extra.f03.js'
 
 export interface DataStore {
   // Users
@@ -64,4 +70,26 @@ export interface DataStore {
 
   // Reset (dev only)
   resetSimulated(): Promise<{ deleted: Record<string, number> }>
+
+  // F-03 Activity Events
+  listActivityEvents(filters?: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean }, limit?: number, offset?: number): Promise<Paged<ActivityEvent>>
+  insertActivityEvents(events: ActivityEvent[]): Promise<number>
+  updateActivityEvent(id: string, changes: any): Promise<void>
+  deleteActivityEvent(id: string): Promise<void>
+
+  // F-03 Mapping Rules
+  listMappingRules(app?: App): Promise<EventMappingRule[]>
+  insertMappingRule(rule: EventMappingRule): Promise<EventMappingRule>
+  updateMappingRule(id: string, updates: Partial<EventMappingRule>): Promise<EventMappingRule | null>
+  deleteMappingRule(id: string): Promise<boolean>
+
+  // F-03 Ingest Runs
+  listIngestRuns(app?: App): Promise<IngestRun[]>
+  insertIngestRun(run: IngestRun): Promise<IngestRun>
+  updateIngestRun(id: string, changes: any): Promise<void>
+  deleteIngestRun(id: string): Promise<void>
+
+  // F-03 Usage Summaries
+  getUsageSummary(scopeKey: string): Promise<UsageSummary | null>
+  saveUsageSummary(scopeKey: string, summary: UsageSummary): Promise<void>
 }
