@@ -71,6 +71,17 @@ export interface DataStore {
   // Reset (dev only)
   resetSimulated(): Promise<{ deleted: Record<string, number> }>
 
+  // Live integration: persist sync
+  persistSync(
+    tenantId: string,
+    snapshot: any,
+    run: any,
+    grants: any[],
+    users: any[],
+    entitlements: any[],
+    audit: any
+  ): Promise<{ success: boolean; snapshotId: string; syncRunId: string; tenantId: string }>
+
   // F-03 Activity Events
   listActivityEvents(filters?: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean }, limit?: number, offset?: number): Promise<Paged<ActivityEvent>>
   insertActivityEvents(events: ActivityEvent[]): Promise<number>

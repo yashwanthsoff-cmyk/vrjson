@@ -25,6 +25,7 @@ import { devFlagsRoute, devResetRoute } from './routes/dev.js'
 import { manualFindingsRoute, getManualFindingsRoute } from './routes/findings.js'
 import { auditEventRoute } from './routes/auditEvent.js'
 import { driftSummaryRoute } from './routes/driftSummary.js'
+import { githubSyncRoute, githubStatusRoute } from './routes/github.js'
 
 // Type assertion for Express request extension
 declare global {
@@ -270,6 +271,23 @@ export function createApp(store: DataStore) {
   app.post('/api/drift-summary', driftSummaryLimiter, async (req, res, next) => {
     try {
       await driftSummaryRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
+  })
+
+  // GitHub connector routes
+  app.post('/api/connectors/github/sync', async (req, res, next) => {
+    try {
+      await githubSyncRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
+  })
+
+  app.get('/api/connectors/github/status', async (req, res, next) => {
+    try {
+      await githubStatusRoute(store, req, res)
     } catch (e) {
       next(e)
     }

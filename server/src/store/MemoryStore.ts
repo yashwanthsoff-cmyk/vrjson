@@ -522,6 +522,20 @@ export class MemoryStore implements DataStore {
     return { deleted }
   }
 
+  // Live integration: persist sync (stub for MemoryStore)
+  async persistSync(
+    tenantId: string,
+    snapshot: any,
+    run: any,
+    grants: any[],
+    users: any[],
+    entitlements: any[],
+    audit: any
+  ): Promise<{ success: boolean; snapshotId: string; syncRunId: string; tenantId: string }> {
+    // MemoryStore doesn't support tenant-based persistence
+    throw new Error('persistSync is not supported in MemoryStore. Use SupabaseStore.')
+  }
+
   // F-03 Activity Events
   async listActivityEvents(
     filters: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean } = {},

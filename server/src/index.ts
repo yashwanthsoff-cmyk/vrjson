@@ -13,10 +13,17 @@ async function main() {
       await store.getCounts() // Test connection
       logger.info('Using Supabase store')
     } catch (error) {
+      if (env.APP_MODE === 'live') {
+        logger.error('Supabase unreachable in live mode. Cannot proceed without live persistence.')
+        process.exit(1)
+      }
       logger.warn('Supabase unreachable, falling back to MemoryStore')
       store = new MemoryStore()
     }
   } else {
+    if (env.APP_MODE === 'live' && env.STORE === 'memory') {
+      logger.warn('Live mode with STORE=memory: no real persistence. This is for testing only.')
+    }
     store = new MemoryStore()
     logger.info('Using MemoryStore')
   }

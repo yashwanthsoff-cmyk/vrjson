@@ -330,6 +330,30 @@ export class SupabaseStore implements DataStore {
     return { deleted: data as Record<string, number> }
   }
 
+  // Live integration: persist sync
+  async persistSync(
+    tenantId: string,
+    snapshot: any,
+    run: any,
+    grants: any[],
+    users: any[],
+    entitlements: any[],
+    audit: any
+  ): Promise<{ success: boolean; snapshotId: string; syncRunId: string; tenantId: string }> {
+    const { data, error } = await supabase.rpc('persist_sync', {
+      p_tenant_id: tenantId,
+      p_snapshot: snapshot,
+      p_run: run,
+      p_grants: grants,
+      p_users: users,
+      p_entitlements: entitlements,
+      p_audit: audit,
+    })
+
+    if (error) throw problems.internal(error.message)
+    return data as { success: boolean; snapshotId: string; syncRunId: string; tenantId: string }
+  }
+
   // F-03 Activity Events
   async listActivityEvents(
     filters: { userId?: string; app?: App; actionClass?: string; from?: string; to?: string; isSimulated?: boolean } = {},
