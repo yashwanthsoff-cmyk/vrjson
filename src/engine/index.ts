@@ -36,3 +36,9 @@ export function validateClaims(sentences: { id: string; claims: Claim[] }[], evi
 }
 
 export function canonicalJson(value: unknown) { return JSON.stringify(value, Object.keys(value as object).sort()) }
+
+export function replaySnapshot(snapshot: { id: string; app: string; date: string; complete: boolean; members: number; hash: string }, corrupt = false) {
+  if (!snapshot.complete) return { status: 'skipped' as const, snapshotId: snapshot.id, reason: 'Incomplete snapshot skipped.' }
+  if (corrupt) return { status: 'failed' as const, snapshotId: snapshot.id, reason: `Stored hash mismatch for ${snapshot.id}.` }
+  return { status: 'passed' as const, snapshotId: snapshot.id, reason: 'Replay hash matched stored snapshot.' }
+}

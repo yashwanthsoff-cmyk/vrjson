@@ -19,7 +19,8 @@ export function createHttpApi() {
     getEvidence: () => request<unknown[]>('/api/evidence'),
     getExplanation: (id: string) => request<unknown>(`/api/findings/${id}/explanation`),
     verifyAudit: () => request<{ passed: number; brokenAt: string | null }>('/api/audit/verify', { method: 'POST' }),
-    replay: (id?: string) => request<{ passed: number; failed: number; skipped: number }>('/api/replay-check', { method: 'POST', body: JSON.stringify({ snapshotId: id }) }),
+    replay: (id?: string) => request<{ passed: number; failed: number; skipped: number; failedSnapshotId: string | null }>('/api/replay-check', { method: 'POST', body: JSON.stringify({ snapshotId: id }) }),
+    corruptSnapshot: (id: string) => request<unknown>(`/api/snapshots/${id}/corrupt`, { method: 'POST' }),
     sync: (app: string) => request<{ status: string; added: number; removed: number; note: string }>('/api/connectors/sync', { method: 'POST', body: JSON.stringify({ app }) }),
     getHandoffs: () => request<unknown[]>('/api/handoffs'),
     getActivity: () => request<unknown[]>('/api/activity'),
@@ -30,5 +31,7 @@ export function createHttpApi() {
     getRoleChanges: () => request<unknown[]>('/api/role-changes'),
     getSettings: () => request<unknown>('/api/settings'),
     getConnectors: () => request<unknown[]>('/api/connectors'),
+    revokeConsent: (app: string) => request<unknown>(`/api/connectors/${encodeURIComponent(app)}/consent`, { method: 'DELETE' }),
+    restoreConsent: (app: string) => request<unknown>(`/api/connectors/${encodeURIComponent(app)}/consent`, { method: 'POST' }),
   }
 }

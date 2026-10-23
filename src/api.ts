@@ -1,10 +1,12 @@
 import { auditSeed, evidence, findings, getExplanation, getFinding, getUser, handoffs, activity, snapshots, users, entitlements, peerGroups, roleChanges, settings, connectors, type AuditEvent, type Finding } from './data'
+import { replaySnapshot } from './engine'
 
 const wait = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms))
 let audit = [...auditSeed]
 let currentFindings = [...findings]
 let currentHandoffs = [...handoffs]
 const previousStatuses: Record<string, Finding['status']> = {}
+let corruptedSnapshotId: string | null = null
 
 const log = (action: string, target: string, detail: string) => {
   const event: AuditEvent = { id: `au-live-${audit.length + 1}`, at: '2026-10-23 11:54', action, target, actor: 'Asha Rao', detail, hash: `live…${String(audit.length + 1).padStart(4, '0')}` }
@@ -24,7 +26,8 @@ export const api = {
   async getEvidence() { await wait(); return [...evidence] },
   async getExplanation(id: string) { await wait(); return getExplanation(getFinding(id)) },
   async verifyAudit() { await wait(); log('audit.verified', 'chain', 'Hash chain verified through the demo event set.'); return { passed: audit.length, brokenAt: null } },
-  async replay(id?: string) { await wait(); log('replay.run', id ?? 'all', 'Replay check completed on synthetic snapshots.'); return { passed: snapshots.filter((item) => item.complete && (!id || item.id === id)).length, failed: 0, skipped: snapshots.filter((item) => !item.complete).length } },
+  async replay(id?: string) { await wait(); const checked = snapshots.filter((item) => !id || item.id === id).map((item) => replaySnapshot(item, item.id === corruptedSnapshotId)); const failedItem = checked.find((item) => item.status === 'failed'); log('replay.run', id ?? 'all', failedItem ? `Replay failed for ${failedItem.snapshotId}.` : 'Replay check completed on synthetic snapshots.'); return { passed: checked.filter((item) => item.status === 'passed').length, failed: checked.filter((item) => item.status === 'failed').length, skipped: checked.filter((item) => item.status === 'skipped').length, failedSnapshotId: failedItem?.snapshotId ?? null } },
+  async corruptSnapshot(id: string) { await wait(); corruptedSnapshotId = id; return log('snapshot.corrupted', id, `Session-only corruption toggle enabled for ${id}.`) },
   async sync(app: string) { await wait(); log('sync.run', app, 'Simulated. No connected app was contacted.'); return { status: 'ok', added: 1, removed: 0, note: 'Synthetic sync run appended.' } },
   async getHandoffs() { await wait(); return [...currentHandoffs] },
   async getActivity() { await wait(); return [...activity] },
@@ -35,6 +38,8 @@ export const api = {
   async getRoleChanges() { await wait(); return [...roleChanges] },
   async getSettings() { await wait(); return { ...settings } },
   async getConnectors() { await wait(); return [...connectors] },
+  async revokeConsent(app: string) { await wait(); return log('consent.revoked', app, 'Source revoked. Data frozen as of 2026-10-23.') },
+  async restoreConsent(app: string) { await wait(); return log('consent.restored', app, 'Consent restored; simulated first sync is available.') },
 }
 
 export type Api = typeof api

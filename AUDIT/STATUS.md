@@ -70,3 +70,5 @@ PASS = present, data-driven, interactive and evidenced. PARTIAL = present but in
 | 2 | Static/HTTP API selector, HTTP client scaffold, error mapping | IN PROGRESS: one strict type issue fixed; verification rerun required |
 
 | 3 | Shared session store, delegated action handling, decision reason selector and append-only undo | PASS: typecheck, 7 tests and build |
+
+| 4 | F-09 claim validation/fallback, replay integrity, corrupt snapshot simulation, consent revoke/restore | PASS: typecheck, 8 tests and build |

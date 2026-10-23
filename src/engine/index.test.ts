@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyUsage, recommend, score, validateClaims } from './index'
+import { classifyUsage, recommend, replaySnapshot, score, validateClaims } from './index'
 
 describe('AccessDrift engine invariants', () => {
   it('never classifies short coverage as unused', () => { expect(classifyUsage({ observedDays: 11, windowDays: 45, lastUsedAt: null }).state).toBe('unknown') })
@@ -7,4 +7,5 @@ describe('AccessDrift engine invariants', () => {
   it('caps null blast radius at review', () => { expect(recommend({ usage: classifyUsage({ observedDays: 180, windowDays: 45, lastUsedAt: null }), blastRadius: null, confidence: 'high', dormantAccount: true, hasDowngrade: true, type: 'unused' })).toBe('review') })
   it('normalizes weights before scoring', () => { expect(score({ severity: 1, sensitivity: 1, evidenceStrength: 1, staleness: 1, weights: { severity: 3, sensitivity: 2, evidenceStrength: 1, staleness: 0 } })).toBe(100) })
   it('rejects a claim whose value differs from evidence', () => { const result = validateClaims([{ id: 's1', claims: [{ id: 'c1', field: 'daysAgo', value: 140, evidenceId: 'e1' }] }], [{ id: 'e1', type: 'activity', occurredAt: '2026-10-23', source: 'seed', payload: { daysAgo: 3 } }]); expect(result.passed).toBe(false); expect(result.failures).toHaveLength(1) })
+  it('skips incomplete snapshots and names a corrupted snapshot', () => { const incomplete = replaySnapshot({ id: 's-incomplete', app: 'Entra', date: '2026-03-12', complete: false, members: 2, hash: 'skip' }); const failed = replaySnapshot({ id: 's-corrupt', app: 'Google', date: '2026-10-23', complete: true, members: 2, hash: 'sha256:x' }, true); expect(incomplete.status).toBe('skipped'); expect(failed).toMatchObject({ status: 'failed', snapshotId: 's-corrupt' }) })
 })

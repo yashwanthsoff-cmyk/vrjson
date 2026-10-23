@@ -27,3 +27,12 @@ Batch 2 verification: typecheck PASS, lint proxy PASS, 5 tests PASS, production 
 - Added reason-code selector to the finding decision drawer.
 - Added `src/action-coverage.test.ts` crawler; 7 tests now pass.
 - Verification: typecheck PASS, action crawler PASS, engine tests PASS, production build PASS.
+
+## Batch 4 — evidence validation, replay integrity and consent
+
+- Replaced the F-09 explanation toast with real claim-versus-evidence validation using `validateClaims`.
+- Added visible fallback wording and failed validation counts; evidence IDs are actionable controls.
+- Added deterministic snapshot replay result states for passed, failed and incomplete/skipped records.
+- Added session-only corrupt-snapshot control in Dev panel and failed snapshot naming.
+- Added consent revoke/restore API mutations, per-source state, read-only scope metadata and exact source-revoked banner.
+- Verification: typecheck PASS, 8 tests PASS, production build PASS.
