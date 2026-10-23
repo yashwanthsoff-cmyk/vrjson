@@ -1,0 +1,17 @@
+{
+  "google_workspace": [
+    { "userId": "u-meera", "entitlementId": "e-drive-write" },
+    { "userId": "u-rohan", "entitlementId": "e-support-read" },
+    { "userId": "u-divya", "entitlementId": "e-export" }
+  ],
+  "microsoft_entra": [
+    { "userId": "u-karthik", "entitlementId": "e-entra-app" },
+    { "userId": "u-aarav", "entitlementId": "e-entra-admin" },
+    { "userId": "u-sana", "entitlementId": "e-entra-app" }
+  ],
+  "github": [
+    { "userId": "u-tara", "entitlementId": "e-github-read" },
+    { "userId": "u-meera", "entitlementId": "e-repo-export" },
+    { "userId": "u-rohan", "entitlementId": "e-github-write" }
+  ]
+}

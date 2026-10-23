@@ -23,7 +23,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "pino": "^9.6.0",
-    "pg": "^10.2.0",
+    "pg": "^8.13.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
