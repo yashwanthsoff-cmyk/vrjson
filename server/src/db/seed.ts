@@ -1,8 +1,8 @@
 import { env } from '../env.js'
 import { createClient } from '@supabase/supabase-js'
-import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../src/data.js'
+import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../../src/data.js'
 import { computeContentHash, computeMemberCount } from '../engine-ext/hash.js'
-import { mapApp } from '../store/MemoryStore.js'
+import { mapApp } from '../mappers.js'
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 

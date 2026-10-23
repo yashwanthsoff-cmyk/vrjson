@@ -1,7 +1,7 @@
 import type { App, Grant, Snapshot, Evidence, AuditEvent } from '@contract'
 import type { SyncSchedule, SyncRun, RoleChange, Connector, Reviewer, Paged } from '../types/extra.js'
 import type { DataStore } from './DataStore.js'
-import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../src/data.js'
+import { users, entitlements, snapshots as frontendSnapshots, roleChanges as frontendRoleChanges, findings, evidence as frontendEvidence } from '../../../src/data.js'
 import { problems } from '../problem.js'
 import { logger } from '../logger.js'
 import { mapApp, reverseApp } from '../mappers.js'
