@@ -1,11 +1,17 @@
 import dotenv from 'dotenv'
 import { z } from 'zod'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 
-dotenv.config({ path: '.env' })
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+dotenv.config({ path: join(__dirname, '../.env') })
 
 const envSchema = z.object({
   GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required'),
   GROQ_MODEL: z.string().default('openai/gpt-oss-120b'),
+  GROQ_MODEL_FALLBACK: z.string().optional(),
   GROQ_BASE_URL: z.string().url(),
   GROQ_ENABLED: z.string().transform((v) => v === 'true'),
   SUPABASE_URL: z.string().url(),

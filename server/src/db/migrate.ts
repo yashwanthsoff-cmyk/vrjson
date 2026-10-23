@@ -1,12 +1,15 @@
 import { env } from '../env.js'
-import { readFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, readdirSync, writeFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import pg from 'pg'
 
 const { Client } = pg
 
 async function runMigrations() {
-  const dbDir = new URL('.', import.meta.url).pathname
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = dirname(__filename)
+  const dbDir = __dirname
   const sqlFiles = readdirSync(dbDir)
     .filter((f) => f.endsWith('.sql') && f.match(/^\d+_/))
     .sort()
@@ -34,8 +37,7 @@ async function runMigrations() {
   } else {
     // Write all.sql for manual execution
     const allSqlPath = join(dbDir, 'all.sql')
-    const fs = await import('fs')
-    fs.writeFileSync(allSqlPath, allSql)
+    writeFileSync(allSqlPath, allSql)
     console.log('DATABASE_URL not set.')
     console.log(`Migrations written to: ${allSqlPath}`)
     console.log('Paste this file into the Supabase SQL Editor, run it, then run: npm run db:seed')

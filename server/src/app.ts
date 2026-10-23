@@ -8,6 +8,23 @@ import { isApiError, problems } from './problem.js'
 import { MemoryStore } from './store/MemoryStore.js'
 import { SupabaseStore } from './store/SupabaseStore.js'
 import type { DataStore } from './store/DataStore.js'
+import { healthRoute } from './routes/health.js'
+import { inventoryRoute } from './routes/inventory.js'
+import { grantsRoute } from './routes/grants.js'
+import { snapshotsRoute } from './routes/snapshots.js'
+import { accessAsOfRoute } from './routes/accessAsOf.js'
+import { diffRoute } from './routes/diff.js'
+import { coverageRoute } from './routes/coverage.js'
+import { beforeAfterRoute } from './routes/beforeAfter.js'
+import { evidenceRoute } from './routes/evidence.js'
+import { auditRoute } from './routes/audit.js'
+import { syncRunsRoute, scheduleRoute, syncSimulateRoute, scheduleUpdateRoute } from './routes/sync.js'
+import { exportDiffCsvRoute } from './routes/export.js'
+import { replayCheckRoute } from './routes/replay.js'
+import { devFlagsRoute, devResetRoute } from './routes/dev.js'
+import { manualFindingsRoute, getManualFindingsRoute } from './routes/findings.js'
+import { auditEventRoute } from './routes/auditEvent.js'
+import { driftSummaryRoute } from './routes/driftSummary.js'
 
 // Type assertion for Express request extension
 declare global {
@@ -72,125 +89,190 @@ export function createApp(store: DataStore) {
   })
 
   // Health endpoint
-  app.get('/health', async (req, res) => {
-    const { healthRoute } = await import('./routes/health.js')
-    return healthRoute(store, req, res)
+  app.get('/health', async (req, res, next) => {
+    try {
+      await healthRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/health', async (req, res) => {
-    const { healthRoute } = await import('./routes/health.js')
-    return healthRoute(store, req, res)
+  app.get('/api/health', async (req, res, next) => {
+    try {
+      await healthRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  // Read routes
-  app.get('/api/inventory', async (req, res) => {
-    const { inventoryRoute } = await import('./routes/inventory.js')
-    return inventoryRoute(store, req, res)
+  // Read routes - static imports
+  app.get('/api/inventory', async (req, res, next) => {
+    try {
+      await inventoryRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/grants', async (req, res) => {
-    const { grantsRoute } = await import('./routes/grants.js')
-    return grantsRoute(store, req, res)
+  app.get('/api/grants', async (req, res, next) => {
+    try {
+      await grantsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/snapshots', async (req, res) => {
-    const { snapshotsRoute } = await import('./routes/snapshots.js')
-    return snapshotsRoute(store, req, res)
+  app.get('/api/snapshots', async (req, res, next) => {
+    try {
+      await snapshotsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/access-as-of', async (req, res) => {
-    const { accessAsOfRoute } = await import('./routes/accessAsOf.js')
-    return accessAsOfRoute(store, req, res)
+  app.get('/api/access-as-of', async (req, res, next) => {
+    try {
+      await accessAsOfRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/diff', async (req, res) => {
-    const { diffRoute } = await import('./routes/diff.js')
-    return diffRoute(store, req, res)
+  app.get('/api/diff', async (req, res, next) => {
+    try {
+      await diffRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/snapshot-coverage', async (req, res) => {
-    const { coverageRoute } = await import('./routes/coverage.js')
-    return coverageRoute(store, req, res)
+  app.get('/api/snapshot-coverage', async (req, res, next) => {
+    try {
+      await coverageRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/before-after', async (req, res) => {
-    const { beforeAfterRoute } = await import('./routes/beforeAfter.js')
-    return beforeAfterRoute(store, req, res)
+  app.get('/api/before-after', async (req, res, next) => {
+    try {
+      await beforeAfterRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/evidence/:id', async (req, res) => {
-    const { evidenceRoute } = await import('./routes/evidence.js')
-    return evidenceRoute(store, req, res)
+  app.get('/api/evidence/:id', async (req, res, next) => {
+    try {
+      await evidenceRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/audit', async (req, res) => {
-    const { auditRoute } = await import('./routes/audit.js')
-    return auditRoute(store, req, res)
+  app.get('/api/audit', async (req, res, next) => {
+    try {
+      await auditRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/sync-runs', async (req, res) => {
-    const { syncRunsRoute } = await import('./routes/sync.js')
-    return syncRunsRoute(store, req, res)
+  app.get('/api/sync-runs', async (req, res, next) => {
+    try {
+      await syncRunsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/schedule', async (req, res) => {
-    const { scheduleRoute } = await import('./routes/sync.js')
-    return scheduleRoute(store, req, res)
+  app.get('/api/schedule', async (req, res, next) => {
+    try {
+      await scheduleRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/export/diff.csv', async (req, res) => {
-    const { exportDiffCsvRoute } = await import('./routes/export.js')
-    return exportDiffCsvRoute(store, req, res)
+  app.get('/api/export/diff.csv', async (req, res, next) => {
+    try {
+      await exportDiffCsvRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
   // Write routes
-  app.post('/api/replay-check', async (req, res) => {
-    const { replayCheckRoute } = await import('./routes/replay.js')
-    return replayCheckRoute(store, req, res)
+  app.post('/api/replay-check', async (req, res, next) => {
+    try {
+      await replayCheckRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.post('/api/dev/flags', async (req, res) => {
-    const { devFlagsRoute } = await import('./routes/dev.js')
-    return devFlagsRoute(store, req, res)
+  app.post('/api/dev/flags', async (req, res, next) => {
+    try {
+      await devFlagsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.post('/api/dev/reset', async (req, res) => {
-    const { devResetRoute } = await import('./routes/dev.js')
-    return devResetRoute(store, req, res)
+  app.post('/api/dev/reset', async (req, res, next) => {
+    try {
+      await devResetRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  // Sync routes
-  app.post('/api/sync/simulate', async (req, res) => {
-    const { syncSimulateRoute } = await import('./routes/sync.js')
-    return syncSimulateRoute(store, req, res)
+  app.post('/api/sync/simulate', async (req, res, next) => {
+    try {
+      await syncSimulateRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.put('/api/schedule/:app', async (req, res) => {
-    const { scheduleUpdateRoute } = await import('./routes/sync.js')
-    return scheduleUpdateRoute(store, req, res)
+  app.put('/api/schedule/:app', async (req, res, next) => {
+    try {
+      await scheduleUpdateRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  // Findings routes
-  app.post('/api/findings/manual', async (req, res) => {
-    const { manualFindingsRoute } = await import('./routes/findings.js')
-    return manualFindingsRoute(store, req, res)
+  app.post('/api/findings/manual', async (req, res, next) => {
+    try {
+      await manualFindingsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  app.get('/api/findings/manual', async (req, res) => {
-    const { getManualFindingsRoute } = await import('./routes/findings.js')
-    return getManualFindingsRoute(store, req, res)
+  app.get('/api/findings/manual', async (req, res, next) => {
+    try {
+      await getManualFindingsRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  // Audit event route
-  app.post('/api/audit/event', async (req, res) => {
-    const { auditEventRoute } = await import('./routes/auditEvent.js')
-    return auditEventRoute(store, req, res)
+  app.post('/api/audit/event', async (req, res, next) => {
+    try {
+      await auditEventRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
-  // Drift summary route (with rate limiting)
-  app.post('/api/drift-summary', driftSummaryLimiter, async (req, res) => {
-    const { driftSummaryRoute } = await import('./routes/driftSummary.js')
-    return driftSummaryRoute(store, req, res)
+  app.post('/api/drift-summary', driftSummaryLimiter, async (req, res, next) => {
+    try {
+      await driftSummaryRoute(store, req, res)
+    } catch (e) {
+      next(e)
+    }
   })
 
   // Central error handler (must be after all routes)

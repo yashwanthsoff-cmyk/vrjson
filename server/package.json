@@ -14,7 +14,8 @@
     "scan:secrets": "tsx scripts/scan-secrets.ts",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run test && npm run scan:secrets",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "routes:list": "tsx src/scripts/listRoutes.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",

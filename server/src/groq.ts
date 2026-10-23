@@ -81,6 +81,15 @@ export async function callGroqExplanation(
     clearTimeout(timeout)
 
     if (!response.ok) {
+      // Try fallback model on 404 or model_not_found
+      if ((response.status === 404 || response.status === 400) && env.GROQ_MODEL_FALLBACK) {
+        const body: any = await response.json().catch(() => ({}))
+        if (body?.error?.type === 'model_not_found' || response.status === 404) {
+          logger.warn(`Groq ${response.status} with ${env.GROQ_MODEL}, trying fallback ${env.GROQ_MODEL_FALLBACK}`)
+          return await callGroqExplanationWithModel(request, env.GROQ_MODEL_FALLBACK)
+        }
+      }
+
       // Try again without reasoning_effort and response_format on 400
       if (response.status === 400) {
         logger.warn('Groq 400, retrying without special parameters')
@@ -132,6 +141,80 @@ export async function callGroqExplanation(
     } else {
       logger.error({ error: 'Groq request failed', details: error })
     }
+    return { sentences: [], source: 'template', fallbackUsed: true }
+  }
+}
+
+async function callGroqExplanationWithModel(
+  request: GroqExplanationRequest,
+  model: string
+): Promise<{ sentences: GroqExplanationResponse['sentences']; source: 'model' | 'template'; fallbackUsed: boolean }> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15000)
+
+  try {
+    const response = await fetch(`${env.GROQ_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.1,
+        max_completion_tokens: 1500,
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'You write short access-review summaries. Use ONLY the facts in the provided JSON. Output JSON: {"sentences":[{"template":"... {c1} ... {c2}","claimIds":["c1","c2"]}]}. Every sentence must contain at least one placeholder and reference only provided claim IDs. Do not add numbers, names or dates that are not in the claims. Do not give legal or compliance statements. Do not say anything about accuracy or risk reduction. Maximum 4 sentences.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(request),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      logger.error(`Groq fallback with ${model} failed: ${response.status}`)
+      return { sentences: [], source: 'template', fallbackUsed: true }
+    }
+
+    const data = await response.json() as GroqCompletionResponse
+    const content = data.choices[0]?.message?.content
+
+    if (!content) {
+      logger.error('Groq fallback returned empty content')
+      return { sentences: [], source: 'template', fallbackUsed: true }
+    }
+
+    let parsed: GroqExplanationResponse
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      logger.error('Groq fallback returned invalid JSON')
+      return { sentences: [], source: 'template', fallbackUsed: true }
+    }
+
+    if (data.usage) {
+      logger.info({
+        groqTokens: data.usage.total_tokens,
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        fallbackModel: model,
+      })
+    }
+
+    return { sentences: parsed.sentences, source: 'model', fallbackUsed: true }
+  } catch (error) {
+    clearTimeout(timeout)
+    logger.error({ error: 'Groq fallback request failed', details: error })
     return { sentences: [], source: 'template', fallbackUsed: true }
   }
 }
