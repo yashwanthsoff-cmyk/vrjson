@@ -24,7 +24,7 @@ export async function usageSummaryRoute(store: DataStore, req: Request, res: Res
 
   const { userId, app, showNames } = parsed.data
   const appFilter = (app as App) || null
-  const scopeKey = `${userId}:${appFilter || 'all'}`
+  const scopeKey = `${userId}:${appFilter || 'all'}:${showNames ? 'named' : 'anon'}`
 
   // Check cache first
   const cached = await store.getUsageSummary(scopeKey)
