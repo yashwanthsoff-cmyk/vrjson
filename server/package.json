@@ -1,0 +1,45 @@
+{
+  "name": "accessdrift-server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:verify": "tsx src/db/seed.ts --verify",
+    "test": "vitest run",
+    "test:live": "RUN_LIVE=1 vitest run",
+    "scan:secrets": "tsx scripts/scan-secrets.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run test && npm run scan:secrets",
+    "verify:f02": "tsx src/scripts/verifyF02.ts",
+    "demo": "tsx scripts/demo.ts",
+    "demo:f03": "tsx src/scripts/demoF03.ts",
+    "test:f03:all": "tsx src/scripts/testAllF03.ts",
+    "routes:list": "tsx src/scripts/listRoutes.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.1",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.12.0",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.0.0",
+    "tsx": "^4.22.0",
+    "typescript": "^5.8.2",
+    "vitest": "^5.0.5"
+  }
+}

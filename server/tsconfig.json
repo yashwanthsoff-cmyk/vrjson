@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "noEmit": true,
+    "rootDir": "..",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "paths": {
+      "@engine/*": ["../src/engine/*"],
+      "@contract": ["../src/types/contract.ts"]
+    }
+  },
+  "include": ["src/**/*", "../src/engine/**/*", "../src/types/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

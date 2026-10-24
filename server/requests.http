@@ -1,0 +1,523 @@
+### AccessDrift Backend API Requests
+### Base URL: http://localhost:8787/api
+
+@baseUrl = http://localhost:8787/api
+@actorId = rev-asha
+@sessionId = test-session-001
+
+#####################################
+# Health
+#####################################
+
+### Health Check
+GET {{baseUrl}}/health
+
+#####################################
+# Inventory
+#####################################
+
+### Get All Inventory
+GET {{baseUrl}}/inventory
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Inventory for User
+GET {{baseUrl}}/inventory?userId=u-meera
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Inventory for App
+GET {{baseUrl}}/inventory?app=google_workspace
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Grants
+#####################################
+
+### Get All Grants
+GET {{baseUrl}}/grants
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Grants for User
+GET {{baseUrl}}/grants?userId=u-meera
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Active Grants on Date
+GET {{baseUrl}}/grants?userId=u-meera&activeOn=2026-06-01
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Snapshots
+#####################################
+
+### Get All Snapshots
+GET {{baseUrl}}/snapshots
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Snapshots for App
+GET {{baseUrl}}/snapshots?app=google_workspace
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Complete Snapshots Only
+GET {{baseUrl}}/snapshots?complete=true
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Access As-Of
+#####################################
+
+### Get Access As-Of
+GET {{baseUrl}}/access-as-of?userId=u-meera&date=2026-06-01
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Diff
+#####################################
+
+### Diff Between Dates
+GET {{baseUrl}}/diff?userId=u-meera&a=2026-05-14&b=2026-10-23
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Diff Between Snapshot IDs
+GET {{baseUrl}}/diff?userId=u-meera&a=snap-google-20260514&b=snap-google-20261023
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Coverage
+#####################################
+
+### Get Snapshot Coverage
+GET {{baseUrl}}/snapshot-coverage
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Before-After
+#####################################
+
+### Get Before-After Comparison
+GET {{baseUrl}}/before-after?userId=u-meera
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Before-After with Specific Event Date
+GET {{baseUrl}}/before-after?userId=u-meera&eventDate=2026-06-01
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Sync Runs
+#####################################
+
+### Get All Sync Runs
+GET {{baseUrl}}/sync-runs
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Sync Runs for App
+GET {{baseUrl}}/sync-runs?app=google_workspace
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Schedule
+#####################################
+
+### Get All Schedules
+GET {{baseUrl}}/schedule
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Update Schedule
+PUT {{baseUrl}}/schedule/google_workspace
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "frequency": "daily",
+  "enabled": true,
+  "actorId": "rev-asha"
+}
+
+#####################################
+# Sync Simulate
+#####################################
+
+### Simulate Sync Without Change
+POST {{baseUrl}}/sync/simulate
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "app": "google_workspace",
+  "withChange": false,
+  "actorId": "rev-asha"
+}
+
+### Simulate Sync With Change
+POST {{baseUrl}}/sync/simulate
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "app": "google_workspace",
+  "withChange": true,
+  "actorId": "rev-asha"
+}
+
+#####################################
+# Replay Check
+#####################################
+
+### Run Replay Check on All Snapshots
+POST {{baseUrl}}/replay-check
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{}
+
+### Run Replay Check on Specific Snapshot
+POST {{baseUrl}}/replay-check
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "snapshotId": "snap-google-20261023"
+}
+
+#####################################
+# Evidence
+#####################################
+
+### Get Evidence by ID
+GET {{baseUrl}}/evidence/ev-grant-grant-0001
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Audit
+#####################################
+
+### Get All Audit Events
+GET {{baseUrl}}/audit
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Audit Events for Actor
+GET {{baseUrl}}/audit?actorId=rev-asha
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Get Audit Events for Action
+GET {{baseUrl}}/audit?action=sync.completed
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### Record Audit Event
+POST {{baseUrl}}/audit/event
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "id": "au-test-001",
+  "actorId": "rev-asha",
+  "action": "finding.viewed",
+  "targetType": "finding",
+  "targetId": "find-001",
+  "detail": "Viewed finding in testing"
+}
+
+#####################################
+# Findings
+#####################################
+
+### Create Manual Finding
+POST {{baseUrl}}/findings/manual
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "userId": "u-meera",
+  "entitlementId": "ent-001",
+  "grantId": "grant-0001",
+  "actorId": "rev-asha"
+}
+
+### Get Manual Findings
+GET {{baseUrl}}/findings/manual
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Export
+#####################################
+
+### Export Diff as CSV
+GET {{baseUrl}}/export/diff.csv?userId=u-meera&a=2026-05-14&b=2026-10-23
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+#####################################
+# Drift Summary
+#####################################
+
+### Get Drift Summary
+POST {{baseUrl}}/drift-summary
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "userId": "u-meera",
+  "from": "2026-01-01T00:00:00Z",
+  "to": "2026-10-23T00:00:00Z",
+  "showNames": false
+}
+
+### Get Drift Summary with Names
+POST {{baseUrl}}/drift-summary
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "userId": "u-meera",
+  "from": "2026-01-01T00:00:00Z",
+  "to": "2026-10-23T00:00:00Z",
+  "showNames": true
+}
+
+#####################################
+# Dev Flags (Non-Production Only)
+#####################################
+
+### Set Dev Flags
+POST {{baseUrl}}/dev/flags
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "corruptSnapshotId": "snap-google-20261023"
+}
+
+### Set Connector Error Flag
+POST {{baseUrl}}/dev/flags
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{
+  "simulateConnectorError": {
+    "google_workspace": true
+  }
+}
+
+### Reset Simulated Data
+POST {{baseUrl}}/dev/reset
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+Content-Type: application/json
+
+{}
+
+
+#####################################
+# F-03 Granted-vs-Used Detector Requests
+#####################################
+
+### F03: Get Activity Events
+GET {{baseUrl}}/activity?limit=20
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Activity Summary
+GET {{baseUrl}}/activity/summary
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: List Mapping Rules
+GET {{baseUrl}}/mapping-rules
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Test Mapping Glob Pattern
+POST {{baseUrl}}/mapping/test
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "action": "drive.file.create",
+  "app": "google_workspace"
+}
+
+### F03: Create Mapping Rule (Session Overlay)
+POST {{baseUrl}}/mapping-rules
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "app": "google_workspace",
+  "actionPattern": "drive.export.*",
+  "entitlementId": "e-drive-admin",
+  "note": "Custom export rule in session"
+}
+
+### F03: Get Ingest Runs
+GET {{baseUrl}}/ingest-runs
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Simulate Ingest Run
+POST {{baseUrl}}/ingest/simulate
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "app": "google_workspace"
+}
+
+### F03: Get Observation Windows
+GET {{baseUrl}}/observation-windows
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Usage Rows
+GET {{baseUrl}}/usage?limit=20
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Single Usage Row
+GET {{baseUrl}}/usage/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Usage Findings
+GET {{baseUrl}}/usage/findings
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Stateless Usage Evaluation
+POST {{baseUrl}}/usage/evaluate
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "user": { "id": "test-eval", "startDate": "2024-01-01T00:00:00Z", "role": "Developer" },
+  "entitlement": {
+    "id": "e-eval",
+    "app": "google_workspace",
+    "name": "Eval Ent",
+    "privilegeLevel": "standard",
+    "dataSensitivity": "internal",
+    "categories": ["Storage"]
+  },
+  "activityTimestamps": ["2026-10-01T00:00:00Z"]
+}
+
+### F03: Get Recommendation Card
+GET {{baseUrl}}/recommendation/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Coverage Guard
+GET {{baseUrl}}/coverage-guard/u-karthik/e-drive-admin
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Get Tags
+GET {{baseUrl}}/tags
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Put Tags (Session Overlay)
+PUT {{baseUrl}}/tags
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "targetType": "entitlement",
+  "targetId": "e-drive-admin",
+  "tags": ["Storage", "Admin", "ReviewNeeded"]
+}
+
+### F03: Get Effective Settings
+GET {{baseUrl}}/settings/effective
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Update Effective Settings (What-If Delta)
+PUT {{baseUrl}}/settings/effective
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "unusedWindowDays": {
+    "admin": 30,
+    "standard": 90
+  }
+}
+
+### F03: Reset Effective Settings
+POST {{baseUrl}}/settings/reset
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Clear Session Overlay
+DELETE {{baseUrl}}/session/overlay
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Activity CSV
+GET {{baseUrl}}/export/activity.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Usage CSV
+GET {{baseUrl}}/export/usage.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Export Inventory CSV
+GET {{baseUrl}}/export/inventory.csv
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: Scenario Checks (S3, S6, S7, S8)
+GET {{baseUrl}}/scenario-checks/f03
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+### F03: AI Usage Summary
+POST {{baseUrl}}/usage-summary
+Content-Type: application/json
+x-actor-id: {{actorId}}
+x-session-id: {{sessionId}}
+
+{
+  "userId": "u-karthik",
+  "showNames": false
+}

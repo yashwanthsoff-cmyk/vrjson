@@ -2,4 +2,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 .env
-.env.*
+.env.local
+.env.*.local
+server/.env
+!.env.example
+!.env.local.example
+server/src/db/all.sql
+

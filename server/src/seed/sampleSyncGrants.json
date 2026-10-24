@@ -1,0 +1,17 @@
+{
+  "google_workspace": [
+    { "userId": "u-user-001", "entitlementId": "ent-github-admin" },
+    { "userId": "u-user-002", "entitlementId": "ent-google-admin" },
+    { "userId": "u-user-003", "entitlementId": "ent-entra-user" }
+  ],
+  "microsoft_entra": [
+    { "userId": "u-user-004", "entitlementId": "ent-entra-admin" },
+    { "userId": "u-user-005", "entitlementId": "ent-google-user" },
+    { "userId": "u-user-006", "entitlementId": "ent-github-user" }
+  ],
+  "github": [
+    { "userId": "u-user-007", "entitlementId": "ent-github-admin" },
+    { "userId": "u-user-001", "entitlementId": "ent-github-user" },
+    { "userId": "u-user-002", "entitlementId": "ent-entra-user" }
+  ]
+}
