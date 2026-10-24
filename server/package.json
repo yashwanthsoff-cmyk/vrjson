@@ -17,6 +17,7 @@
     "verify:f02": "tsx src/scripts/verifyF02.ts",
     "demo": "tsx scripts/demo.ts",
     "demo:f03": "tsx src/scripts/demoF03.ts",
+    "test:f03:all": "tsx src/scripts/testAllF03.ts",
     "routes:list": "tsx src/scripts/listRoutes.ts"
   },
   "dependencies": {
