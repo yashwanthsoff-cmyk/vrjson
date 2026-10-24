@@ -1,5 +1,6 @@
 import { staticApi } from './staticApi'
 import { createHttpApi } from './httpApi'
 
-export const api = import.meta.env.VITE_API_MODE === 'http' ? createHttpApi() : staticApi
+// Default to HTTP mode unless explicitly set to 'static'
+export const api = import.meta.env.VITE_API_MODE === 'static' ? staticApi : createHttpApi()
 export type ApiClient = typeof api

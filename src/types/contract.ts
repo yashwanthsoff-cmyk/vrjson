@@ -4,6 +4,7 @@ export type FindingType = 'unused' | 'stale_grant' | 'peer_outlier' | 'mover_car
 export type UiRole = 'reviewer' | 'admin' | 'auditor'
 export type FindingStatus = 'open' | 'in_review' | 'handed_off' | 'kept' | 'deferred' | 'justified'
 export type Recommendation = 'keep' | 'review' | 'downgrade' | 'revoke'
+export type SensitivityChip = 'low' | 'medium' | 'high' | 'admin'
 
 export interface Page<T> { items: T[]; nextCursor: string | null; total: number }
 export interface ApiError { code: 'validation' | 'not_found' | 'conflict' | 'forbidden' | 'rate_limited' | 'unavailable' | 'unknown'; message: string; details?: Record<string, string[]> }
